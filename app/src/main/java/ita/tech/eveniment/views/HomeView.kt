@@ -1,0 +1,96 @@
+package ita.tech.eveniment.views
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import ita.tech.eveniment.components.DownloadLabel
+import ita.tech.eveniment.components.DownloadScreen
+import ita.tech.eveniment.socket.SocketHandler
+import ita.tech.eveniment.viewModels.CarrucelViewModel
+import ita.tech.eveniment.viewModels.ProcesoViewModel
+import ita.tech.eveniment.viewModels.RecursoVideoModel
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+fun HomeView(
+    procesoVM: ProcesoViewModel,
+    carrucelVM: CarrucelViewModel
+) {
+
+    val context = LocalContext.current
+
+    val stateEveniment = procesoVM.stateEveniment
+
+    //-- Obtiene la lista de los recursos
+    val recursos by procesoVM.recursos.collectAsState()
+
+    //-- Conexión del Socket
+    val mSocket = SocketHandler.getSocket()
+
+    LaunchedEffect(Unit) {
+        // Conectamos el dispositivo
+        mSocket.emit("connected", stateEveniment.idDispositivo, stateEveniment.ipAddress)
+
+        // Escuchamos los eventos del usuario
+        mSocket.on("metodos_servidor") { args ->
+            if (args != null) {
+                val comando = args[0]
+                //-- Actualiza la lista de reproducción
+                if (comando == "reinicio") {
+                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+                }
+            }
+        }
+    }
+
+    if (stateEveniment.bandDescargaRecursos) {
+        DownloadScreen(procesoVM)
+    } else {
+        ConstraintLayout(
+            Modifier.fillMaxSize()
+        ) {
+            val lblDescarga = createRef()
+
+            //-- Muestra la plantilla seleccionada
+            Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
+            // Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM)
+            // Plantilla_Horizontal_Cinco(carrucelVM, recursos)
+
+            //-- Muesta el estado de descarga
+            if (stateEveniment.bandDescargaLbl) {
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .background(color = Color.Black.copy(alpha = 0.6f))
+                        .padding(8.dp)
+                        .constrainAs(lblDescarga) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                        }
+                ) {
+                    DownloadLabel(procesoVM, carrucelVM)
+                }
+            }
+        }
+    }
+}
