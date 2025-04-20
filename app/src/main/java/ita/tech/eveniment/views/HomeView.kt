@@ -27,6 +27,7 @@ import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import ita.tech.eveniment.viewModels.RecursoVideoModel
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 
@@ -40,6 +41,7 @@ fun HomeView(
     val context = LocalContext.current
 
     val stateEveniment = procesoVM.stateEveniment
+    val stateInformacionPantalla = procesoVM.stateInformacionPantalla
 
     //-- Obtiene la lista de los recursos
     val recursos by procesoVM.recursos.collectAsState()
@@ -72,9 +74,20 @@ fun HomeView(
             val lblDescarga = createRef()
 
             //-- Muestra la plantilla seleccionada
-            Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
-            // Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM)
-            // Plantilla_Horizontal_Cinco(carrucelVM, recursos)
+            when (stateInformacionPantalla.tipo_disenio) {
+                "1" -> {
+                    Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
+                }
+                "4" -> {
+                    Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM)
+                }
+                "5" -> {
+                    Plantilla_Horizontal_Cinco(carrucelVM, recursos)
+                }
+                else -> {
+
+                }
+            }
 
             //-- Muesta el estado de descarga
             if (stateEveniment.bandDescargaLbl) {
