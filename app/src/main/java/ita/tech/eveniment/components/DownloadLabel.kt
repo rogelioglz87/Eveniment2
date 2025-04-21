@@ -27,12 +27,16 @@ fun DownloadLabel(procesoVM: ProcesoViewModel, carrucelVM: CarrucelViewModel){
             procesoVM.recursosId,
             onComplete = {
                 procesoVM.sustituyeUrlPorPathLocal()
+                procesoVM.sustituyeUrlPorPathLocalPantalla()
                 carrucelVM.resetCarrucel()
                 procesoVM.setBandInicioDescarga(false)
                 procesoVM.setTotalRecursos(0)    // Inicializamos el total de recursos a descargar
                 procesoVM.setTotalRecursosDescargados(0)
                 procesoVM.clearListaIdRecursos() // Borramos los Ids de las descargas
                 procesoVM.setbandDescargaLbl(false)
+                // Actualizar informacion de pantalla
+
+                // Actualizar informacion de recursos
             },
             onRecursoDescargado = {
                 procesoVM.setTotalRecursosDescargados(recursosDescargados)

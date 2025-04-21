@@ -15,7 +15,7 @@ data class EvenimentState(
     val bandCarpetasCreadas: Boolean = false,
     val bandInicioDescarga: Boolean = false,  // Indica el momento en que inicia la descarga de los recursos
     val bandDescargaRecursos: Boolean = true, // Indica el momento en que se debe quitar la pantalla de descarga
-    val bandDescargaLbl: Boolean = false,     // Indicara en un etiqueta en pantalla cuando se realiza una descarga de recursos
+    val bandDescargaLbl: Boolean = false,     // Indicara en una etiqueta en pantalla cuando se realiza una descarga de recursos
 
     //-- Colores de la Pantalla
     val color_primario: Color = Color(0xFFFFFFFF),
