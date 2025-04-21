@@ -59,7 +59,12 @@ fun HomeView(
                 val comando = args[0]
                 //-- Actualiza la lista de reproducción
                 if (comando == "reinicio") {
-                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+
+                    // Actualiza los recursos
+                    // procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+
+                    // Actualiza la información de la pantalla
+                    procesoVM.descargarInformacionPantalla(context)
                 }
             }
         }

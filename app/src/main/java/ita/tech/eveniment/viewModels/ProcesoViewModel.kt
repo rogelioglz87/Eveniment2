@@ -229,6 +229,35 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         }
     }
 
+    fun descargarInformacionPantalla(context: Context){
+        stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
+        viewModelScope.launch {
+            //-- API Descargamos recursos de la PANTALLA
+            obtenerInformacionPantalla()
+
+            // Obtenemos y convertimos los colores de la pantalla
+            convertirColoresPantalla()
+
+            // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
+            val recursosPantalla: List<String> = obtenerRecursosPantalla()
+
+            // Almacenamos el Total de recursos a descargar más los recursos de pantalla
+            stateEveniment = stateEveniment.copy( totalRecursos = recursosPantalla.size )
+
+            // Descargamos los recursos de pantalla
+            descargarArchivosPantalla(recursosPantalla, context)
+
+            // Indicamos el momento en que se inicia la descarga
+            if( stateEveniment.totalRecursos > 0 ){
+                stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
+            } else{
+                // Quitamos pantalla de Descarga
+                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+            }
+        }
+    }
+
+
     /**
      * Descarga solo los recursos de la lista de reproducción.
      */
