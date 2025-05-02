@@ -29,6 +29,9 @@ class Constants {
         const val P1_SIZE_TITULO = 26
         const val P1_SIZE_FECHA = 16
 
+        // Plantilla 2
+        const val P2_SIZE_FECHA = 14
+        const val P2_SIZE_TITULO = 18
 
     }
 
