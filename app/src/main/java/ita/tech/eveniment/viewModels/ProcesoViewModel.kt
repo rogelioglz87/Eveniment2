@@ -506,7 +506,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             stateInformacionPantalla = stateInformacionPantalla.copy( nombreArchivoImgDisenioDos = "$FOLDER_EVENIMENT_DATOS/${obtenerNombreUrl(stateInformacionPantalla.nombreArchivoImgDisenioDos)}")
         }
         if (stateInformacionPantalla.nombreArchivoImgDisenioTres != "" ){
-            stateInformacionPantalla = stateInformacionPantalla.copy( nombreArchivoImgDisenioDos = "$FOLDER_EVENIMENT_DATOS/${obtenerNombreUrl(stateInformacionPantalla.nombreArchivoImgDisenioTres)}")
+            stateInformacionPantalla = stateInformacionPantalla.copy( nombreArchivoImgDisenioTres = "$FOLDER_EVENIMENT_DATOS/${obtenerNombreUrl(stateInformacionPantalla.nombreArchivoImgDisenioTres)}")
         }
         if (stateInformacionPantalla.u_logo_app != "" ){
             stateInformacionPantalla = stateInformacionPantalla.copy( u_logo_app = "$FOLDER_EVENIMENT_DATOS/${obtenerNombreUrl(stateInformacionPantalla.u_logo_app)}")

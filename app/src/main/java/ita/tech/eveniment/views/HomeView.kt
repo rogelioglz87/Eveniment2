@@ -29,6 +29,7 @@ import ita.tech.eveniment.viewModels.ProcesoViewModel
 import ita.tech.eveniment.viewModels.RecursoVideoModel
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Dos
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -82,6 +83,9 @@ fun HomeView(
             when (stateInformacionPantalla.tipo_disenio) {
                 "1" -> {
                     Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
+                }
+                "2" -> {
+                    Plantilla_Horizontal_Dos(carrucelVM, recursos, procesoVM)
                 }
                 "4" -> {
                     Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM)
