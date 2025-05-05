@@ -1,8 +1,10 @@
 package ita.tech.eveniment.viewModels
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Environment
 import android.provider.Settings.Secure
@@ -200,6 +202,13 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             // Obtenemos y convertimos los colores de la pantalla
             convertirColoresPantalla()
 
+            // Rotamos la pantalla en caso de ser necesario
+            val contextAux = context
+            if( contextAux is Activity)
+            {
+                contextAux.requestedOrientation = determinaOrientacionPantalla()
+            }
+
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
             val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
@@ -237,6 +246,13 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
             // Obtenemos y convertimos los colores de la pantalla
             convertirColoresPantalla()
+
+            // Rotamos la pantalla en caso de ser necesario
+            val contextAux = context
+            if( contextAux is Activity)
+            {
+                contextAux.requestedOrientation = determinaOrientacionPantalla()
+            }
 
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
             val recursosPantalla: List<String> = obtenerRecursosPantalla()
@@ -588,6 +604,28 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         }else{
             ""
         }
+    }
+
+    private fun determinaOrientacionPantalla(): Int{
+        var orientacion: Int = 0
+        orientacion = when( stateInformacionPantalla.tipo_disenio ){
+            "7","8","9" -> forzarOrientacionVertical()
+            else -> forzarOrientacionHorizontal()
+        }
+        println("*** orientacion $orientacion")
+        return orientacion
+    }
+
+    // Para forzar la orientación vertical (retrato):
+    private fun forzarOrientacionVertical(): Int {
+        println("*** orientacion vertical")
+        return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    // Para forzar la orientación horizontal (landscape):
+    private fun forzarOrientacionHorizontal(): Int {
+        println("*** orientacion horizontal")
+        return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     }
 
 }

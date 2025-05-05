@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
 
             DisposableEffect(Unit) {
                 onDispose {
+                    println("*** --- DESCONECTAR SOCKET")
                     SocketHandler.closeConnection()
                 }
             }
