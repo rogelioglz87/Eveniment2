@@ -8,12 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +18,6 @@ import ita.tech.eveniment.components.PHBarraLateralUno
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
-import ita.tech.eveniment.viewModels.RecursoVideoModel
 
 @Composable
 fun Plantilla_Horizontal_Uno(
@@ -32,7 +25,6 @@ fun Plantilla_Horizontal_Uno(
     recursos: List<InformacionRecursoModel>,
     procesoVM: ProcesoViewModel
 ){
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
