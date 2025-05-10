@@ -26,6 +26,7 @@ import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuat
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Dos
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Tres
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
+import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -92,7 +93,7 @@ fun HomeView(
                     Plantilla_Horizontal_Cinco(carrucelVM, recursos)
                 }
                 "9" -> {
-                    Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
+                    Plantilla_Vertical_Nueve(carrucelVM, recursos)
                 }
                 else -> {
 
