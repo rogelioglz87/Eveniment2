@@ -21,13 +21,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.util.UnstableApi
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
-import ita.tech.eveniment.viewModels.RecursoVideoModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(UnstableApi::class)
 @Composable
-fun Carrucel(carrucelVM: CarrucelViewModel, recursos: List<InformacionRecursoModel>){
+fun Carrucel(
+    carrucelVM: CarrucelViewModel,
+    recursos: List<InformacionRecursoModel>
+){
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -78,26 +79,20 @@ fun Carrucel(carrucelVM: CarrucelViewModel, recursos: List<InformacionRecursoMod
         ) {
             // Definimos el Tipo de recuso a mostrar (Imagen, Video, Youtube, Pagina Web etc...)
             val recurso = recursos[page].datos.toString()
-            
-            if (recursos[page].tipo_slide == "imagen")
-            {
+
+            if (recursos[page].tipo_slide == "imagen") {
                 RecursoImagen(rutaImagen = recurso, context = context)
-            }
-            else if (recursos[page].tipo_slide == "video")
-            {
+            } else if (recursos[page].tipo_slide == "video") {
                 RecursoVideo(recurso)
-            }
-            else if (recursos[page].tipo_slide == "cctv")
-            {
+            } else if (recursos[page].tipo_slide == "cctv") {
                 RecursoCCTV(path = recurso)
-            }
-            else if(recursos[page].tipo_slide == "pagina_web")
-            {
+            } else if (recursos[page].tipo_slide == "pagina_web") {
                 RecursoWeb(url = recurso)
             }
-                
+
         }
     }
+
 }
 
 /**

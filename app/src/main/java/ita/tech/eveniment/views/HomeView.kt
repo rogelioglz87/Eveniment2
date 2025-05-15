@@ -78,22 +78,22 @@ fun HomeView(
             //-- Muestra la plantilla seleccionada
             when (stateInformacionPantalla.tipo_disenio) {
                 "1" -> {
-                    Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM)
+                    Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM, context)
                 }
                 "2" -> {
-                    Plantilla_Horizontal_Dos(carrucelVM, recursos, procesoVM)
+                    Plantilla_Horizontal_Dos(carrucelVM, recursos, procesoVM, context)
                 }
                 "3" -> {
-                    Plantilla_Horizontal_Tres(carrucelVM, recursos, procesoVM)
+                    Plantilla_Horizontal_Tres(carrucelVM, recursos, procesoVM, context)
                 }
                 "4" -> {
-                    Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM)
+                    Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM, context)
                 }
                 "5" -> {
-                    Plantilla_Horizontal_Cinco(carrucelVM, recursos)
+                    Plantilla_Horizontal_Cinco(carrucelVM, recursos, procesoVM, context)
                 }
                 "9" -> {
-                    Plantilla_Vertical_Nueve(carrucelVM, recursos)
+                    Plantilla_Vertical_Nueve(carrucelVM, recursos, procesoVM, context)
                 }
                 else -> {
 

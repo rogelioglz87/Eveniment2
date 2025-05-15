@@ -1,5 +1,6 @@
 package ita.tech.eveniment.views.plantillasHorizontales
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import ita.tech.eveniment.components.Carrucel
 import ita.tech.eveniment.components.PHBarraLateralUno
+import ita.tech.eveniment.components.RecursoImagen
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
@@ -23,7 +26,8 @@ import ita.tech.eveniment.viewModels.ProcesoViewModel
 fun Plantilla_Horizontal_Uno(
     carrucelVM: CarrucelViewModel,
     recursos: List<InformacionRecursoModel>,
-    procesoVM: ProcesoViewModel
+    procesoVM: ProcesoViewModel,
+    context: Context
 ){
     Row(
         modifier = Modifier
@@ -46,7 +50,17 @@ fun Plantilla_Horizontal_Uno(
                 .background(Color.Black)
         ) {
             if(carrucelVM.stateCarrucel.mostrarCarrucel){
-                Carrucel(carrucelVM, recursos)
+
+                // Validamos si la lista contiene recursos, en caso de que NO mostramos imagen por default.
+                if( recursos.isEmpty() )
+                {
+                    RecursoImagen(rutaImagen = procesoVM.stateInformacionPantalla.nombreArchivo, context = context)
+                }
+                else
+                {
+                    Carrucel(carrucelVM, recursos)
+                }
+
             }else{
                 Column(
                     modifier = Modifier

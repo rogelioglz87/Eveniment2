@@ -1,5 +1,6 @@
 package ita.tech.eveniment.views.plantillasVerticales
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,13 +12,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import ita.tech.eveniment.components.Carrucel
+import ita.tech.eveniment.components.RecursoImagen
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
+import ita.tech.eveniment.viewModels.ProcesoViewModel
 
 @Composable
 fun Plantilla_Vertical_Nueve(
     carrucelVM: CarrucelViewModel,
-    recursos: List<InformacionRecursoModel>
+    recursos: List<InformacionRecursoModel>,
+    procesoVM: ProcesoViewModel,
+    context: Context
 ){
     Column(
         modifier = Modifier
@@ -26,7 +31,17 @@ fun Plantilla_Vertical_Nueve(
             .background(Color.Black)
     ) {
         if(carrucelVM.stateCarrucel.mostrarCarrucel){
-            Carrucel(carrucelVM, recursos)
+
+            // Validamos si la lista contiene recursos, en caso de que NO mostramos imagen por default.
+            if( recursos.isEmpty() )
+            {
+                RecursoImagen(rutaImagen = procesoVM.stateInformacionPantalla.nombreArchivo, context = context)
+            }
+            else
+            {
+                Carrucel(carrucelVM, recursos)
+            }
+
         }else{
             Column(
                 modifier = Modifier
