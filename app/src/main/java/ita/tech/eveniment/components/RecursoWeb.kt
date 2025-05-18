@@ -3,21 +3,24 @@ package ita.tech.eveniment.components
 import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.viewinterop.AndroidView
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun RecursoWeb(url: String) {
+
+    var webViewInstance: WebView? = null // Para guardar la instancia del WebView
+
     AndroidView(
         modifier = Modifier
             .fillMaxWidth()
@@ -25,6 +28,7 @@ fun RecursoWeb(url: String) {
             .background(Color.Black),
         factory = { contexto ->
             WebView(contexto).apply {
+
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -34,7 +38,7 @@ fun RecursoWeb(url: String) {
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 setInitialScale(90)
-                clearCache(true)
+                // clearCache(true)
                 // settings.textZoom = 100
                 settings.blockNetworkImage = false
                 settings.loadsImagesAutomatically = true
@@ -48,11 +52,28 @@ fun RecursoWeb(url: String) {
                 // WebView settings
                 fitsSystemWindows = true
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+                webViewInstance = this
             }
         },
         update = { webView ->
-            webView.loadUrl(url)
+            if (webView.url != url) {
+                webView.loadUrl(url)
+            }
         }
     )
+
+    DisposableEffect(Unit) {
+        onDispose {
+            webViewInstance?.apply {
+                loadUrl("about:blank")
+                stopLoading()
+                clearCache(true)
+                clearHistory()
+                destroy()
+            }
+            webViewInstance = null
+        }
+    }
 
 }
