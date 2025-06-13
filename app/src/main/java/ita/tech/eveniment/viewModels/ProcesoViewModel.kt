@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.time.Instant
@@ -127,18 +128,23 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         val folderImagenes = File(FOLDER_EVENIMENT_IMAGENES)
         var band: Boolean = false;
 
-        if( !folderEveniment.exists() ){
-            folderEveniment.mkdir()
+        try{
+            if( !folderEveniment.exists() ){
+                folderEveniment.mkdir()
+            }
+            if ( !folderDatos.exists() ){
+                folderDatos.mkdirs()
+            }
+            if ( !folderVideos.exists() ){
+                folderVideos.mkdirs()
+            }
+            if ( !folderImagenes.exists() ){
+                folderImagenes.mkdirs()
+            }
+        } catch (e: FileNotFoundException){
+            println("Error: " + e.printStackTrace())
         }
-        if ( !folderDatos.exists() ){
-            folderDatos.mkdir()
-        }
-        if ( !folderVideos.exists() ){
-            folderVideos.mkdir()
-        }
-        if ( !folderImagenes.exists() ){
-            folderImagenes.mkdir()
-        }
+
         if(folderEveniment.exists() && folderDatos.exists() && folderVideos.exists() && folderImagenes.exists()){
             band = true
         }

@@ -69,7 +69,8 @@ fun HomeView(
 
     if (stateEveniment.bandDescargaRecursos) {
         DownloadScreen(procesoVM)
-    } else {
+    }
+    else {
         ConstraintLayout(
             Modifier.fillMaxSize()
         ) {
