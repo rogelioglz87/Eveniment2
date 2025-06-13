@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
@@ -88,6 +89,9 @@ fun Carrucel(
                 RecursoCCTV(path = recurso)
             } else if (recursos[page].tipo_slide == "pagina_web") {
                 RecursoWeb(url = recurso)
+            } else if(recursos[page].tipo_slide == "youtube"){
+                // RecursoYouTube(videoId = recurso, LocalLifecycleOwner.current)
+                RecursoYouTube(videoId = recurso)
             }
 
         }
