@@ -32,7 +32,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -112,12 +112,12 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
 
     //-- EXOPLAYER
-    implementation("androidx.media3:media3-exoplayer:1.6.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.6.0")
-    implementation("androidx.media3:media3-ui:1.6.0")
-    implementation("androidx.media3:media3-common:1.6.0")
-    implementation("androidx.media3:media3-exoplayer-rtsp:1.6.0")
-    implementation("androidx.media3:media3-exoplayer-hls:1.6.0")
+    implementation("androidx.media3:media3-exoplayer:1.7.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.7.1")
+    implementation("androidx.media3:media3-ui:1.7.1")
+    implementation("androidx.media3:media3-common:1.7.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.7.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.7.1")
 
     //-- SOCKET
     implementation("io.socket:socket.io-client:2.0.0")
@@ -127,5 +127,8 @@ dependencies {
 
     //-- API YouTube
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.1")
+
+    //-- API CHECK INTERNET
+    implementation("com.github.pwittchen:reactivenetwork-rx2:3.0.8")
 
 }

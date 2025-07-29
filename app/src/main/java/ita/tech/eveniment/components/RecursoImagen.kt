@@ -16,7 +16,7 @@ fun RecursoImagen( rutaImagen: String, context: Context ){
         model = ImageRequest.Builder(context).data(rutaImagen)
             .crossfade(enable = true).build(),
         contentDescription = null,
-        contentScale = ContentScale.FillWidth,
+        contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()

@@ -7,6 +7,7 @@ data class EvenimentState(
     val ipAddress: String = "",
     val ipVPN: String = "",
     val altaDispositivo: Boolean = false,
+    val estatusInternet: Boolean = false,
 
     val totalRecursos: Int = 0,
     val totalRecursosDescargados: Int = 0,

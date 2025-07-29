@@ -20,7 +20,7 @@ fun NavManager(procesoVM: ProcesoViewModel, carrucelVM: CarrucelViewModel){
 
     NavHost(navController = navController, startDestination = "SplashScreen"){
         composable("Home") {
-            HomeView(procesoVM, carrucelVM)
+            HomeView(procesoVM, carrucelVM, navController)
         }
         composable("SplashScreen") {
             SplashScreenView(navController, procesoVM)

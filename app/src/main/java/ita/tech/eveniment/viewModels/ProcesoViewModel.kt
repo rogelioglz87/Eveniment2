@@ -21,6 +21,7 @@ import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
+import ita.tech.eveniment.util.Constants.Companion.CENTRO_DEFAULT
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_DATOS
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_IMAGENES
@@ -29,11 +30,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.time.Instant
@@ -49,6 +53,10 @@ import javax.inject.Inject
 class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepository) :
     ViewModel() {
 
+        // Bandera para inicializar la App
+        private val _isAppInitialized = MutableStateFlow(false)
+    val isAppInitialized: StateFlow<Boolean> = _isAppInitialized.asStateFlow()
+
     var stateInformacionPantalla by mutableStateOf(InformacionPantallaState())
         private set
 
@@ -58,8 +66,6 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     private val _recursos_tmp = MutableStateFlow<List<InformacionRecursoModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
     private val _recursos = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())     // Almacenara la lista de recursos cuando la tenga hasta el path local.
     val recursos = _recursos.asStateFlow()
-
-
 
     /**
      * Almacena los IDs de los recursos a descargar
@@ -104,14 +110,45 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         stateEveniment = stateEveniment.copy(bandInicioDescarga = status)
     }
 
+    fun setEstatusInternet( status: Boolean ){
+        stateEveniment = stateEveniment.copy( estatusInternet = status )
+    }
+
+    /**
+     * Inicializa la app de forma asincrona
+     */
+    fun initializeApplication(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) { // Toda esta lógica se ejecuta en un hilo IO
+            Log.d(" ProcesoViewModel", "Iniciando initializeApplication...")
+
+            val creacionCarpetas: Boolean = crearDirectoriosGenerales()
+            if (creacionCarpetas) {
+                withContext(Dispatchers.Main) { setEstatusCarpetas(true) } // Actualiza UI en Main thread
+
+                obtenerIdDevices(context)
+                obtenerIpAdress() // Esta llamada debe estar en IO si hace operaciones de red
+                altaDispositivo(CENTRO_DEFAULT) // Asumiendo que CENTRO_DEFAULT es una constante
+
+                descargarInformacion(context) // Esto ya lanza su propia coroutine con IO
+
+                _isAppInitialized.value = true
+                Log.d("ProcesoViewModel", "Aplicación inicializada completamente.")
+
+            } else {
+                Log.e("ProcesoViewModel", "Error al crear directorios generales. No se pudo inicializar la app.")
+                // Aquí podrías manejar un error, por ejemplo, mostrando un mensaje al usuario
+            }
+        }
+    }
+
     /**
      * Obtiene ID unico del dispositivo.
      */
     @SuppressLint("HardwareIds")
     fun obtenerIdDevices(context: Context) {
         stateEveniment = stateEveniment.copy(
-            // idDispositivo = Secure.getString(context.contentResolver, Secure.ANDROID_ID)
-            idDispositivo = "f4e1c5ef8a4cfeb4"
+            idDispositivo = Secure.getString(context.contentResolver, Secure.ANDROID_ID)
+            // idDispositivo = "f4e1c5ef8a4cfeb4"
         )
     }
 
@@ -121,7 +158,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      * Eveniment -> videos
      * Eveniment -> imagenes
      */
-    fun crearDirectoriosGenerales(): Boolean{
+    private fun crearDirectoriosGenerales(): Boolean{
         val folderEveniment = File(FOLDER_EVENIMENT)
         val folderDatos = File(FOLDER_EVENIMENT_DATOS)
         val folderVideos = File(FOLDER_EVENIMENT_VIDEOS)
@@ -154,44 +191,52 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Obtiene la IP del dispositivo.
      */
-    fun obtenerIpAdress() {
-        try {
-            val interfaces: List<NetworkInterface> = Collections.list(NetworkInterface.getNetworkInterfaces())
-            for (intf in interfaces) {
-                val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
-                for (addr in addrs) {
-                    if (!addr.isLoopbackAddress) {
-                        val sAddr = addr.hostAddress
-                        // WIFI
-                        if (intf.name.contains("wlan0")) {
-                            stateEveniment = stateEveniment.copy( ipAddress = sAddr?.toString() ?: "" )
-                        }
+    private fun obtenerIpAdress() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val interfaces: List<NetworkInterface> =
+                    Collections.list(NetworkInterface.getNetworkInterfaces())
+                for (intf in interfaces) {
+                    val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
+                    for (addr in addrs) {
+                        if (!addr.isLoopbackAddress) {
+                            val sAddr = addr.hostAddress
+                            // WIFI
+                            if (intf.name.contains("wlan0")) {
+                                stateEveniment =
+                                    stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
+                            }
 
-                        // ETHERNET
-                        if (intf.name.contains("eth0")) {
-                            stateEveniment = stateEveniment.copy( ipAddress = sAddr?.toString() ?: "" )
-                        }
+                            // ETHERNET
+                            if (intf.name.contains("eth0")) {
+                                stateEveniment =
+                                    stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
+                            }
 
-                        // VPN
-                        if (intf.name.contains("tun1")) {
-                            stateEveniment = stateEveniment.copy( ipVPN = sAddr?.toString() ?: "" )
+                            // VPN
+                            if (intf.name.contains("tun1")) {
+                                stateEveniment =
+                                    stateEveniment.copy(ipVPN = sAddr?.toString() ?: "")
+                            }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                Log.d("ERROR IP DEVICES", e.message.toString())
             }
-        } catch (e: Exception) {
-            Log.d("ERROR IP DEVICES", e.message.toString())
         }
     }
 
-    fun altaDispositivo(idCetroDefault: String){
-        viewModelScope.launch {
-            withContext(Dispatchers.Main){
+    private fun altaDispositivo(idCetroDefault: String){
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
                 val result = repository.altaDispositivo(stateEveniment.idDispositivo, idCetroDefault)
                 if( result == "1" )
                 {
-                    stateEveniment = stateEveniment.copy( altaDispositivo = true )
+                    withContext(Dispatchers.Main) { stateEveniment = stateEveniment.copy(altaDispositivo = true) }
                 }
+            }catch (e: Exception){
+                println(e.message)
             }
         }
     }
@@ -199,20 +244,21 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Descarga inicial, descarga recursos de la pantalla y de la lista de reproducción
      */
-    fun descargarInformacion(context: Context){
-        viewModelScope.launch {
+    private fun descargarInformacion(context: Context){
+        viewModelScope.launch(Dispatchers.IO) {
 
             //-- API Descargamos recursos de la PANTALLA
             obtenerInformacionPantalla()
 
             // Obtenemos y convertimos los colores de la pantalla
-            convertirColoresPantalla()
+            withContext(Dispatchers.Main) {
+                convertirColoresPantalla()
 
-            // Rotamos la pantalla en caso de ser necesario
-            val contextAux = context
-            if( contextAux is Activity)
-            {
-                contextAux.requestedOrientation = determinaOrientacionPantalla()
+                // Rotamos la pantalla en caso de ser necesario
+                val contextAux = context
+                if (contextAux is Activity) {
+                    contextAux.requestedOrientation = determinaOrientacionPantalla()
+                }
             }
 
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
@@ -225,7 +271,9 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
 
             // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-            stateEveniment = stateEveniment.copy( totalRecursos = recursosDescargables.size + recursosPantalla.size )
+            withContext(Dispatchers.Main) {
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size)
+            }
 
             // Descargamos los recursos de pantalla
             descargarArchivosPantalla(recursosPantalla, context)
@@ -234,48 +282,59 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             descargarArchivos(recursosDescargables, context)
 
             // Indicamos el momento en que se inicia la descarga
-            stateEveniment = if( stateEveniment.totalRecursos > 0 ){
-                stateEveniment.copy( bandInicioDescarga = true )
-            } else{
-                // Quitamos pantalla de Descarga
-                stateEveniment.copy( bandDescargaRecursos = false )
+            withContext(Dispatchers.Main) {
+                stateEveniment = if (stateEveniment.totalRecursos > 0) {
+                    stateEveniment.copy(bandInicioDescarga = true)
+                } else {
+                    // Quitamos pantalla de Descarga
+                    stateEveniment.copy(bandDescargaRecursos = false)
+                }
             }
 
         }
     }
 
     fun descargarInformacionPantalla(context: Context){
-        stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            // stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
+            withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+
             //-- API Descargamos recursos de la PANTALLA
             obtenerInformacionPantalla()
 
-            // Obtenemos y convertimos los colores de la pantalla
-            convertirColoresPantalla()
 
-            // Rotamos la pantalla en caso de ser necesario
-            val contextAux = context
-            if( contextAux is Activity)
-            {
-                contextAux.requestedOrientation = determinaOrientacionPantalla()
+            withContext(Dispatchers.Main) {
+                // Obtenemos y convertimos los colores de la pantalla
+                convertirColoresPantalla()
+
+                // Rotamos la pantalla en caso de ser necesario
+                val contextAux = context
+                if (contextAux is Activity) {
+                    contextAux.requestedOrientation = determinaOrientacionPantalla()
+                }
             }
 
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
             val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
-            // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-            stateEveniment = stateEveniment.copy( totalRecursos = recursosPantalla.size )
+            withContext(Dispatchers.Main) {
+                // Almacenamos el Total de recursos a descargar más los recursos de pantalla
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size)
+            }
 
             // Descargamos los recursos de pantalla
             descargarArchivosPantalla(recursosPantalla, context)
 
             // Indicamos el momento en que se inicia la descarga
-            if( stateEveniment.totalRecursos > 0 ){
-                stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
-            } else{
-                // Quitamos pantalla de Descarga
-                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+            withContext(Dispatchers.Main) {
+                if( stateEveniment.totalRecursos > 0 ){
+                    stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
+                } else{
+                    // Quitamos pantalla de Descarga
+                    stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                }
             }
+
         }
     }
 
@@ -284,8 +343,10 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      * Descarga solo los recursos de la lista de reproducción.
      */
     fun descargarInformacionListaReproduccion(context: Context, carrucelVM: CarrucelViewModel){
-        stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
-        viewModelScope.launch {
+        // stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
+        viewModelScope.launch (Dispatchers.IO) {
+            withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+
             //-- API Descargamos recursos de la LISTA DE REPRODUCCION
             obtenerInformacionRecursos()
 
@@ -293,61 +354,72 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
 
             // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-            stateEveniment = stateEveniment.copy( totalRecursos = recursosDescargables.size )
+            withContext(Dispatchers.Main) {
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size)
+            }
 
             // Descargamos los recursos
             descargarArchivos(recursosDescargables, context)
 
             // Indicamos el momento en que se inicia la descarga
-            if( stateEveniment.totalRecursos > 0 ){
-                stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
-            } else{
-                // Quitamos etiqueta de Descarga
-                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
-                carrucelVM.resetCarrucel()
+            withContext(Dispatchers.Main) {
+                if (stateEveniment.totalRecursos > 0) {
+                    stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
+                } else {
+                    // Quitamos etiqueta de Descarga
+                    stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                    carrucelVM.resetCarrucel()
+                }
             }
         }
     }
 
     private suspend fun obtenerInformacionPantalla() {
-        withContext(Dispatchers.IO) {
-            val result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
-            stateInformacionPantalla = stateInformacionPantalla.copy(
-                centro = result?.centro ?: "",
-                subdominio = result?.subdominio ?: "",
-                nombreArchivo = result?.nombreArchivo ?: "",
-                tipo_disenio = result?.tipo_disenio ?: "",
-                duracion_slide = result?.duracion_slide ?: "",
-                logo = result?.logo ?: "",
-                logo_app = result?.logo_app ?: "",
-                color_primario = result?.color_primario ?: "",
-                color_secundario = result?.color_secundario ?: "",
-                color_boton = result?.color_boton ?: "",
-                color_texto = result?.color_texto ?: "",
-                color_logo = result?.color_logo ?: "",
-                efecto_app = result?.efecto_app ?: "",
-                fuente_link = result?.fuente_link ?: "",
-                fuente_nombre = result?.fuente_nombre ?: "",
-                tituloCentro = result?.tituloCentro ?: "",
-                textoLibre = result?.textoLibre ?: "",
-                nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
-                nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
-                eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
-                idSeccion = result?.idSeccion ?: "",
-                u_logo_app = result?.u_logo_app ?: "",
-                u_color_primario = result?.u_color_primario ?: "",
-                u_color_secundario = result?.u_color_secundario ?: "",
-                u_color_texto = result?.u_color_texto ?: "",
-                u_color_logo = result?.u_color_logo ?: "",
-                u_efecto_app = result?.u_efecto_app ?: "",
-                video_alerta = result?.video_alerta ?: "",
-                time_zone = result?.time_zone ?: "America/Mexico_City",
-                tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
-                rss_adicional = result?.rss_adicional ?: "",
-                id_pantalla = result?.id_pantalla ?: "",
-                calendario_operativo = result?.calendario_operativo ?: ""
-            )
-        }
+        // withContext(Dispatchers.IO) {
+            try {
+                val result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
+                withContext(Dispatchers.Main) {
+                    stateInformacionPantalla = stateInformacionPantalla.copy(
+                        centro = result?.centro ?: "",
+                        subdominio = result?.subdominio ?: "",
+                        nombreArchivo = result?.nombreArchivo ?: "",
+                        tipo_disenio = result?.tipo_disenio ?: "",
+                        duracion_slide = result?.duracion_slide ?: "",
+                        logo = result?.logo ?: "",
+                        logo_app = result?.logo_app ?: "",
+                        color_primario = result?.color_primario ?: "",
+                        color_secundario = result?.color_secundario ?: "",
+                        color_boton = result?.color_boton ?: "",
+                        color_texto = result?.color_texto ?: "",
+                        color_logo = result?.color_logo ?: "",
+                        efecto_app = result?.efecto_app ?: "",
+                        fuente_link = result?.fuente_link ?: "",
+                        fuente_nombre = result?.fuente_nombre ?: "",
+                        tituloCentro = result?.tituloCentro ?: "",
+                        textoLibre = result?.textoLibre ?: "",
+                        nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
+                        nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
+                        eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
+                        idSeccion = result?.idSeccion ?: "",
+                        u_logo_app = result?.u_logo_app ?: "",
+                        u_color_primario = result?.u_color_primario ?: "",
+                        u_color_secundario = result?.u_color_secundario ?: "",
+                        u_color_texto = result?.u_color_texto ?: "",
+                        u_color_logo = result?.u_color_logo ?: "",
+                        u_efecto_app = result?.u_efecto_app ?: "",
+                        video_alerta = result?.video_alerta ?: "",
+                        time_zone = result?.time_zone ?: "America/Mexico_City",
+                        tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
+                        rss_adicional = result?.rss_adicional ?: "",
+                        id_pantalla = result?.id_pantalla ?: "",
+                        calendario_operativo = result?.calendario_operativo ?: ""
+                    )
+                }
+            }catch (e: Exception){
+                println(e.message)
+            }
+
+        // }
     }
 
     /**
@@ -384,13 +456,19 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     private suspend fun obtenerInformacionRecursos() {
-        withContext(Dispatchers.IO) {
-            val result = repository.obtenerInformacionRecursos(
-                stateEveniment.idDispositivo,
-                stateInformacionPantalla.tipo_fuente_eventos
-            )
-            _recursos_tmp.value = result ?: emptyList()
-        }
+        // withContext(Dispatchers.IO) {
+            try {
+                val result = repository.obtenerInformacionRecursos(
+                    stateEveniment.idDispositivo,
+                    stateInformacionPantalla.tipo_fuente_eventos
+                )
+                _recursos_tmp.value = result ?: emptyList()
+            }
+            catch (e: Exception){
+                _recursos_tmp.value = emptyList()
+                println("Error API recursos: " + e.message)
+            }
+        // }
     }
 
     /**
@@ -562,13 +640,15 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     //-- Funciones para obtener la Hora en funcion a la Zona Horaria
     fun activarTime(){
         cronJobTimer?.cancel()
-        cronJobTimer = viewModelScope.launch {
+        cronJobTimer = viewModelScope.launch(Dispatchers.Default) {
             while (true){
                 delay(1000)
                 val tiempoActual = setTimeZone( System.currentTimeMillis() )
-                horaActual = formatTimeHora(tiempoActual)
-                fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
-                fechaActualIngles = formatTimeFechaIngles(tiempoActual)
+                withContext(Dispatchers.Main) {
+                    horaActual = formatTimeHora(tiempoActual)
+                    fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
+                    fechaActualIngles = formatTimeFechaIngles(tiempoActual)
+                }
             }
         }
     }

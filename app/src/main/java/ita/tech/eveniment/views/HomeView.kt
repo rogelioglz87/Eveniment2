@@ -11,11 +11,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
+import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
+import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
+import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
@@ -28,11 +38,13 @@ import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Tres
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
 
+
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun HomeView(
     procesoVM: ProcesoViewModel,
-    carrucelVM: CarrucelViewModel
+    carrucelVM: CarrucelViewModel,
+    navController: NavController
 ) {
 
     val context = LocalContext.current
@@ -46,21 +58,66 @@ fun HomeView(
     //-- Conexión del Socket
     val mSocket = SocketHandler.getSocket()
 
+    //-- Contador de coneciones a internet
+    var contadorInternet by remember { mutableIntStateOf(0) }
+    var reiniciarAppBand by remember { mutableStateOf(false) } // Indica si se reiniciara la app
+
+    LaunchedEffect(stateEveniment.estatusInternet) {
+        if( stateEveniment.estatusInternet )
+        {
+            if( reiniciarAppBand )
+            {
+                // En caso de iniciar la App sin internet, se enviara a la pantalla de Splash para descargar los recursos
+                navController.navigate("SplashScreen"){
+                    popUpTo(0){ saveState = false }
+                    launchSingleTop = true
+                    restoreState = false
+                }
+            }
+            else
+            {
+                // Conectamos el dispositivo al Socket
+                mSocket.emit("connected",stateEveniment.idDispositivo,stateEveniment.ipAddress)
+
+                // Validamos si actualizamos los recursos en caso de una reconexión
+                if( contadorInternet > 0 )
+                {
+                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+                }
+            }
+            contadorInternet++;
+        }
+        else
+        {
+            if( contadorInternet == 0 )
+            {
+                reiniciarAppBand = true;
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
-        // Conectamos el dispositivo
-        mSocket.emit("connected", stateEveniment.idDispositivo, stateEveniment.ipAddress)
+        // Escuchamos evento del servidor
+        mSocket.on("connect") {
+            println("****COMANDO SERV:")
+            // En caso de una desconexion, el servidor puede volver a notificar al dispositivo para su reconexion.
+            // Conectamos el dispositivo al Socket
+            mSocket.emit("connected",stateEveniment.idDispositivo,stateEveniment.ipAddress)
+        }
 
         // Escuchamos los eventos del usuario
         mSocket.on("metodos_servidor") { args ->
+            println("****COMANDO: ${args[0]}")
             if (args != null) {
                 val comando = args[0]
                 //-- Actualiza la lista de reproducción
-                if (comando == "reinicio") {
-
-                    // Actualiza los recursos
-                    // procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
-
-                    // Actualiza la información de la pantalla
+                if (comando == "actualizar_recursos")
+                {
+                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+                }
+                //-- Actualizar los datos del dispositivo
+                else if(comando == "actualizar_datos_dispositivo")
+                {
                     procesoVM.descargarInformacionPantalla(context)
                 }
             }
@@ -72,7 +129,9 @@ fun HomeView(
     }
     else {
         ConstraintLayout(
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
         ) {
             val lblDescarga = createRef()
 
