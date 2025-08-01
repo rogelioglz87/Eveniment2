@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.Settings.Secure
 import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -34,10 +33,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.time.Instant
@@ -126,8 +123,8 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 withContext(Dispatchers.Main) { setEstatusCarpetas(true) } // Actualiza UI en Main thread
 
                 obtenerIdDevices(context)
-                obtenerIpAdress() // Esta llamada debe estar en IO si hace operaciones de red
-                altaDispositivo(CENTRO_DEFAULT) // Asumiendo que CENTRO_DEFAULT es una constante
+                obtenerIpAdress()
+                altaDispositivo(CENTRO_DEFAULT)
 
                 descargarInformacion(context) // Esto ya lanza su propia coroutine con IO
 
@@ -191,142 +188,130 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Obtiene la IP del dispositivo.
      */
-    private fun obtenerIpAdress() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val interfaces: List<NetworkInterface> =
-                    Collections.list(NetworkInterface.getNetworkInterfaces())
-                for (intf in interfaces) {
-                    val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
-                    for (addr in addrs) {
-                        if (!addr.isLoopbackAddress) {
-                            val sAddr = addr.hostAddress
-                            // WIFI
-                            if (intf.name.contains("wlan0")) {
-                                stateEveniment =
-                                    stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
-                            }
+    private suspend fun obtenerIpAdress() {
+        try {
+            val interfaces: List<NetworkInterface> =
+                Collections.list(NetworkInterface.getNetworkInterfaces())
+            for (intf in interfaces) {
+                val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
+                for (addr in addrs) {
+                    if (!addr.isLoopbackAddress) {
+                        val sAddr = addr.hostAddress
+                        // WIFI
+                        if (intf.name.contains("wlan0")) {
+                            stateEveniment =
+                                stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
+                        }
 
-                            // ETHERNET
-                            if (intf.name.contains("eth0")) {
-                                stateEveniment =
-                                    stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
-                            }
+                        // ETHERNET
+                        if (intf.name.contains("eth0")) {
+                            stateEveniment =
+                                stateEveniment.copy(ipAddress = sAddr?.toString() ?: "")
+                        }
 
-                            // VPN
-                            if (intf.name.contains("tun1")) {
-                                stateEveniment =
-                                    stateEveniment.copy(ipVPN = sAddr?.toString() ?: "")
-                            }
+                        // VPN
+                        if (intf.name.contains("tun1")) {
+                            stateEveniment =
+                                stateEveniment.copy(ipVPN = sAddr?.toString() ?: "")
                         }
                     }
                 }
-            } catch (e: Exception) {
-                Log.d("ERROR IP DEVICES", e.message.toString())
             }
+        } catch (e: Exception) {
+            Log.d("ERROR IP DEVICES", e.message.toString())
         }
     }
 
-    private fun altaDispositivo(idCetroDefault: String){
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = repository.altaDispositivo(stateEveniment.idDispositivo, idCetroDefault)
-                if( result == "1" )
-                {
-                    withContext(Dispatchers.Main) { stateEveniment = stateEveniment.copy(altaDispositivo = true) }
+    private suspend fun altaDispositivo(idCetroDefault: String) {
+        try {
+            val result = repository.altaDispositivo(stateEveniment.idDispositivo, idCetroDefault)
+            if (result == "1") {
+                withContext(Dispatchers.Main) {
+                    stateEveniment = stateEveniment.copy(altaDispositivo = true)
                 }
-            }catch (e: Exception){
-                println(e.message)
             }
+        } catch (e: Exception) {
+            println(e.message)
         }
     }
 
     /**
      * Descarga inicial, descarga recursos de la pantalla y de la lista de reproducción
      */
-    private fun descargarInformacion(context: Context){
-        viewModelScope.launch(Dispatchers.IO) {
+    private suspend fun descargarInformacion(context: Context) {
 
-            //-- API Descargamos recursos de la PANTALLA
-            obtenerInformacionPantalla()
+        //-- API Descargamos recursos de la PANTALLA
+        obtenerInformacionPantalla()
 
-            // Obtenemos y convertimos los colores de la pantalla
-            withContext(Dispatchers.Main) {
-                convertirColoresPantalla()
+        // Obtenemos y convertimos los colores de la pantalla
+        withContext(Dispatchers.Main) {
+            convertirColoresPantalla()
 
-                // Rotamos la pantalla en caso de ser necesario
-                val contextAux = context
-                if (contextAux is Activity) {
-                    contextAux.requestedOrientation = determinaOrientacionPantalla()
-                }
+            // Rotamos la pantalla en caso de ser necesario
+            val contextAux = context
+            if (contextAux is Activity) {
+                contextAux.requestedOrientation = determinaOrientacionPantalla()
             }
+        }
 
-            // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
-            val recursosPantalla: List<String> = obtenerRecursosPantalla()
+        // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
+        val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
-            //-- API Descargamos recursos de la LISTA DE REPRODUCCION
-            obtenerInformacionRecursos()
+        //-- API Descargamos recursos de la LISTA DE REPRODUCCION
+        obtenerInformacionRecursos()
 
-            // Obtenemos los recursos descargables.
-            val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
+        // Obtenemos los recursos descargables.
+        val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
 
-            // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-            withContext(Dispatchers.Main) {
-                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size)
+        // Almacenamos el Total de recursos a descargar más los recursos de pantalla
+        withContext(Dispatchers.Main) {
+            stateEveniment =
+                stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size)
+        }
+
+        // Descargamos los recursos de pantalla
+        descargarArchivosPantalla(recursosPantalla, context)
+
+        // Descargamos los recursos
+        descargarArchivos(recursosDescargables, context)
+
+        // Indicamos el momento en que se inicia la descarga
+        withContext(Dispatchers.Main) {
+            stateEveniment = if (stateEveniment.totalRecursos > 0) {
+                stateEveniment.copy(bandInicioDescarga = true)
+            } else {
+                // Quitamos pantalla de Descarga
+                stateEveniment.copy(bandDescargaRecursos = false)
             }
-
-            // Descargamos los recursos de pantalla
-            descargarArchivosPantalla(recursosPantalla, context)
-
-            // Descargamos los recursos
-            descargarArchivos(recursosDescargables, context)
-
-            // Indicamos el momento en que se inicia la descarga
-            withContext(Dispatchers.Main) {
-                stateEveniment = if (stateEveniment.totalRecursos > 0) {
-                    stateEveniment.copy(bandInicioDescarga = true)
-                } else {
-                    // Quitamos pantalla de Descarga
-                    stateEveniment.copy(bandDescargaRecursos = false)
-                }
-            }
-
         }
     }
 
     fun descargarInformacionPantalla(context: Context){
         viewModelScope.launch(Dispatchers.IO) {
-            // stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
 
             //-- API Descargamos recursos de la PANTALLA
             obtenerInformacionPantalla()
 
+            // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
+            val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
             withContext(Dispatchers.Main) {
                 // Obtenemos y convertimos los colores de la pantalla
                 convertirColoresPantalla()
 
                 // Rotamos la pantalla en caso de ser necesario
-                val contextAux = context
-                if (contextAux is Activity) {
-                    contextAux.requestedOrientation = determinaOrientacionPantalla()
+                if (context is Activity) {
+                    context.requestedOrientation = determinaOrientacionPantalla()
                 }
-            }
 
-            // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
-            val recursosPantalla: List<String> = obtenerRecursosPantalla()
-
-            withContext(Dispatchers.Main) {
                 // Almacenamos el Total de recursos a descargar más los recursos de pantalla
                 stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size)
-            }
 
-            // Descargamos los recursos de pantalla
-            descargarArchivosPantalla(recursosPantalla, context)
+                // Descargamos los recursos de pantalla
+                descargarArchivosPantalla(recursosPantalla, context)
 
-            // Indicamos el momento en que se inicia la descarga
-            withContext(Dispatchers.Main) {
+                // Indicamos el momento en que se inicia la descarga
                 if( stateEveniment.totalRecursos > 0 ){
                     stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
                 } else{
@@ -375,51 +360,48 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     private suspend fun obtenerInformacionPantalla() {
-        // withContext(Dispatchers.IO) {
-            try {
-                val result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
-                withContext(Dispatchers.Main) {
-                    stateInformacionPantalla = stateInformacionPantalla.copy(
-                        centro = result?.centro ?: "",
-                        subdominio = result?.subdominio ?: "",
-                        nombreArchivo = result?.nombreArchivo ?: "",
-                        tipo_disenio = result?.tipo_disenio ?: "",
-                        duracion_slide = result?.duracion_slide ?: "",
-                        logo = result?.logo ?: "",
-                        logo_app = result?.logo_app ?: "",
-                        color_primario = result?.color_primario ?: "",
-                        color_secundario = result?.color_secundario ?: "",
-                        color_boton = result?.color_boton ?: "",
-                        color_texto = result?.color_texto ?: "",
-                        color_logo = result?.color_logo ?: "",
-                        efecto_app = result?.efecto_app ?: "",
-                        fuente_link = result?.fuente_link ?: "",
-                        fuente_nombre = result?.fuente_nombre ?: "",
-                        tituloCentro = result?.tituloCentro ?: "",
-                        textoLibre = result?.textoLibre ?: "",
-                        nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
-                        nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
-                        eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
-                        idSeccion = result?.idSeccion ?: "",
-                        u_logo_app = result?.u_logo_app ?: "",
-                        u_color_primario = result?.u_color_primario ?: "",
-                        u_color_secundario = result?.u_color_secundario ?: "",
-                        u_color_texto = result?.u_color_texto ?: "",
-                        u_color_logo = result?.u_color_logo ?: "",
-                        u_efecto_app = result?.u_efecto_app ?: "",
-                        video_alerta = result?.video_alerta ?: "",
-                        time_zone = result?.time_zone ?: "America/Mexico_City",
-                        tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
-                        rss_adicional = result?.rss_adicional ?: "",
-                        id_pantalla = result?.id_pantalla ?: "",
-                        calendario_operativo = result?.calendario_operativo ?: ""
-                    )
-                }
-            }catch (e: Exception){
-                println(e.message)
+        try {
+            val result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
+            withContext(Dispatchers.Main) {
+                stateInformacionPantalla = stateInformacionPantalla.copy(
+                    centro = result?.centro ?: "",
+                    subdominio = result?.subdominio ?: "",
+                    nombreArchivo = result?.nombreArchivo ?: "",
+                    tipo_disenio = result?.tipo_disenio ?: "",
+                    duracion_slide = result?.duracion_slide ?: "",
+                    logo = result?.logo ?: "",
+                    logo_app = result?.logo_app ?: "",
+                    color_primario = result?.color_primario ?: "",
+                    color_secundario = result?.color_secundario ?: "",
+                    color_boton = result?.color_boton ?: "",
+                    color_texto = result?.color_texto ?: "",
+                    color_logo = result?.color_logo ?: "",
+                    efecto_app = result?.efecto_app ?: "",
+                    fuente_link = result?.fuente_link ?: "",
+                    fuente_nombre = result?.fuente_nombre ?: "",
+                    tituloCentro = result?.tituloCentro ?: "",
+                    textoLibre = result?.textoLibre ?: "",
+                    nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
+                    nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
+                    eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
+                    idSeccion = result?.idSeccion ?: "",
+                    u_logo_app = result?.u_logo_app ?: "",
+                    u_color_primario = result?.u_color_primario ?: "",
+                    u_color_secundario = result?.u_color_secundario ?: "",
+                    u_color_texto = result?.u_color_texto ?: "",
+                    u_color_logo = result?.u_color_logo ?: "",
+                    u_efecto_app = result?.u_efecto_app ?: "",
+                    video_alerta = result?.video_alerta ?: "",
+                    time_zone = result?.time_zone ?: "America/Mexico_City",
+                    tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
+                    rss_adicional = result?.rss_adicional ?: "",
+                    id_pantalla = result?.id_pantalla ?: "",
+                    calendario_operativo = result?.calendario_operativo ?: ""
+                )
             }
-
-        // }
+        } catch (e: Exception) {
+            println(e.message)
+        }
     }
 
     /**
@@ -456,19 +438,16 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     private suspend fun obtenerInformacionRecursos() {
-        // withContext(Dispatchers.IO) {
-            try {
-                val result = repository.obtenerInformacionRecursos(
-                    stateEveniment.idDispositivo,
-                    stateInformacionPantalla.tipo_fuente_eventos
-                )
-                _recursos_tmp.value = result ?: emptyList()
-            }
-            catch (e: Exception){
-                _recursos_tmp.value = emptyList()
-                println("Error API recursos: " + e.message)
-            }
-        // }
+        try {
+            val result = repository.obtenerInformacionRecursos(
+                stateEveniment.idDispositivo,
+                stateInformacionPantalla.tipo_fuente_eventos
+            )
+            _recursos_tmp.value = result ?: emptyList()
+        } catch (e: Exception) {
+            _recursos_tmp.value = emptyList()
+            println("Error API recursos: " + e.message)
+        }
     }
 
     /**
