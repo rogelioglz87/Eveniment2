@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +32,8 @@ import ita.tech.eveniment.ui.theme.EvenimentTheme
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -59,50 +62,36 @@ class MainActivity : ComponentActivity() {
             )
 
             LaunchedEffect(key1 = true) {
-                // SocketHandler.setSocket()
-                // SocketHandler.establishConnection()
                 if( !permission ){
                     permissionLaucher.launch( Manifest.permission.READ_EXTERNAL_STORAGE )
                 }
 
-                // Validamos estatus de red
-                /*
-                val settings = InternetObservingSettings.builder()
-                    .host(HOST_INTERNET)
-                    .strategy(SocketInternetObservingStrategy())
-                    .build()
+                launch(Dispatchers.IO) {
+                    // Validamos estatus de red
+                    val settings = InternetObservingSettings.builder()
+                        .host(HOST_INTERNET)
+                        .strategy(SocketInternetObservingStrategy())
+                        .build()
 
-                ReactiveNetwork
-                    .observeInternetConnectivity(settings)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { connectivity ->
-                        procesoVM.setEstatusInternet( connectivity )
-                    };
-                */
+                    val disposable = ReactiveNetwork
+                        .observeInternetConnectivity(settings)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe { connectivity ->
+                            procesoVM.setEstatusInternet(connectivity)
+                        }
+                    disposables.add(disposable)
+                }
+
             }
 
             DisposableEffect(Unit) {
-                val settings = InternetObservingSettings.builder()
-                    .host(HOST_INTERNET)
-                    .strategy(SocketInternetObservingStrategy())
-                    .build()
-
-                val disposable = ReactiveNetwork
-                    .observeInternetConnectivity(settings)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { connectivity ->
-                        procesoVM.setEstatusInternet(connectivity)
-                    }
-                disposables.add(disposable)
-
                 SocketHandler.setSocket()
                 SocketHandler.establishConnection()
 
                 onDispose {
                     println("*** --- DESCONECTAR SOCKET Y ReactiveNetwork")
-                    // SocketHandler.closeConnection()
+                    SocketHandler.closeConnection()
                     disposables.clear() // Desuscribe todos los observadores
                 }
             }

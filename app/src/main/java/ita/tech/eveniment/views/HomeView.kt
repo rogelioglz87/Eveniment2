@@ -15,17 +15,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
@@ -126,35 +121,39 @@ fun HomeView(
 
     if (stateEveniment.bandDescargaRecursos) {
         DownloadScreen(procesoVM)
-    }
-    else {
-        ConstraintLayout(
+    } else {
+        Box (
             Modifier
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            val lblDescarga = createRef()
 
             //-- Muestra la plantilla seleccionada
             when (stateInformacionPantalla.tipo_disenio) {
                 "1" -> {
                     Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM, context)
                 }
+
                 "2" -> {
                     Plantilla_Horizontal_Dos(carrucelVM, recursos, procesoVM, context)
                 }
+
                 "3" -> {
                     Plantilla_Horizontal_Tres(carrucelVM, recursos, procesoVM, context)
                 }
+
                 "4" -> {
                     Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM, context)
                 }
+
                 "5" -> {
                     Plantilla_Horizontal_Cinco(carrucelVM, recursos, procesoVM, context)
                 }
+
                 "9" -> {
                     Plantilla_Vertical_Nueve(carrucelVM, recursos, procesoVM, context)
                 }
+
                 else -> {
 
                 }
@@ -167,14 +166,12 @@ fun HomeView(
                         .wrapContentSize()
                         .background(color = Color.Black.copy(alpha = 0.6f))
                         .padding(8.dp)
-                        .constrainAs(lblDescarga) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                        }
+                        .align(Alignment.BottomStart)
                 ) {
                     DownloadLabel(procesoVM, carrucelVM)
                 }
             }
         }
+        
     }
 }
