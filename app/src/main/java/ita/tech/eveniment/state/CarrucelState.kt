@@ -3,5 +3,6 @@ package ita.tech.eveniment.state
 data class CarrucelState(
     val duracionRecursoActual: Long = 0,
     val tipoSlide: String = "",
-    val mostrarCarrucel: Boolean = true
+    // Se manda a ProcesoViewModel
+    // val mostrarCarrucel: Boolean = true
 )

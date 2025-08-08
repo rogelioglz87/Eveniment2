@@ -5,6 +5,7 @@ data class InformacionPantallaState(
     val subdominio: String = "",
     val nombreArchivo: String = "",
     val tipo_disenio: String = "",
+    val id_lista_reproduccion: Int = 0,
     val duracion_slide: String = "",
     val logo: String = "",
     val logo_app: String = "",

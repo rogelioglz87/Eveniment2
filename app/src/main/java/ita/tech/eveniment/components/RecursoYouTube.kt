@@ -1,5 +1,6 @@
 package ita.tech.eveniment.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -22,7 +23,6 @@ fun RecursoYouTube(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // var youTubePlayerView: YouTubePlayerView? = null // Para guardar la instancia del reproductor
     val playerViewInstance = remember { mutableStateOf<YouTubePlayerView?>(null) }
 
     AndroidView(
@@ -31,6 +31,7 @@ fun RecursoYouTube(
             .fillMaxHeight(),
         factory = { context ->
             YouTubePlayerView(context).apply {
+                Log.d("ID VIDEO 1", videoId)
                 this.enableAutomaticInitialization = false
 
                 // Guardamos la instancia para el DisposableEffect
@@ -63,19 +64,18 @@ fun RecursoYouTube(
                         youTubePlayer.play()
                     }
                 }, playerOptions)
-
-
-
+                // youTubePlayerView = this
             }
         }
     )
 
     DisposableEffect(Unit) {
         onDispose {
-            /*
+/*
             youTubePlayerView?.release()
             youTubePlayerView = null
-            */
+*/
+
             playerViewInstance.value?.apply {
                 lifecycleOwner.lifecycle.removeObserver(this)
                 release()

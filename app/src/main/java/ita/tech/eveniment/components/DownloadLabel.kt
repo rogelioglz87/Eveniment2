@@ -13,7 +13,7 @@ import ita.tech.eveniment.viewModels.ProcesoViewModel
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun DownloadLabel(procesoVM: ProcesoViewModel, carrucelVM: CarrucelViewModel){
+fun DownloadLabel(procesoVM: ProcesoViewModel){
 
     val stateEveniment = procesoVM.stateEveniment
     val context = LocalContext.current
@@ -27,8 +27,9 @@ fun DownloadLabel(procesoVM: ProcesoViewModel, carrucelVM: CarrucelViewModel){
             procesoVM.recursosId,
             onComplete = {
                 procesoVM.sustituyeUrlPorPathLocal()
+                procesoVM.sustituyeUrlPorPathLocalPlantilla()
                 procesoVM.sustituyeUrlPorPathLocalPantalla()
-                carrucelVM.resetCarrucel()
+                procesoVM.resetCarrucel()
                 procesoVM.setBandInicioDescarga(false)
                 procesoVM.setTotalRecursos(0)    // Inicializamos el total de recursos a descargar
                 procesoVM.setTotalRecursosDescargados(0)

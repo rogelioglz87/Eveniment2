@@ -45,7 +45,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val procesoVM: ProcesoViewModel by viewModels()
-        val carrucelVM: CarrucelViewModel by viewModels()
 
         enableEdgeToEdge()
         setContent {
@@ -97,7 +96,7 @@ class MainActivity : ComponentActivity() {
             }
 
             EvenimentTheme {
-                NavManager(procesoVM, carrucelVM)
+                NavManager(procesoVM)
             }
         }
     }

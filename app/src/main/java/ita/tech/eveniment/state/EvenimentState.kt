@@ -27,6 +27,9 @@ data class EvenimentState(
     val u_color_primario: Color = Color(0xFFFFFFFF),
     val u_color_secundario: Color = Color(0xFFFFFFFF),
     val u_color_texto: Color = Color(0xFFFFFFFF),
-    val u_color_logo: Color = Color(0xFFFFFFFF)
+    val u_color_logo: Color = Color(0xFFFFFFFF),
+
+    //-- Mostrar/Ocultar carrucel
+    val mostrarCarrucel: Boolean = true
 
 )

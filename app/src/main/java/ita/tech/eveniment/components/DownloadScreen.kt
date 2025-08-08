@@ -52,6 +52,7 @@ fun DownloadScreen(procesoVM: ProcesoViewModel){
             procesoVM.recursosId,
             onComplete = {
                 procesoVM.sustituyeUrlPorPathLocal()
+                procesoVM.sustituyeUrlPorPathLocalPlantilla()
                 procesoVM.sustituyeUrlPorPathLocalPantalla()
                 procesoVM.setEstatusDescarga(false)      // Bandera para indicar que se quite la pantalla de descarga
                 procesoVM.setBandInicioDescarga(false)

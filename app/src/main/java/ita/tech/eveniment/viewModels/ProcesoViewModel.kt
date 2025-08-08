@@ -17,6 +17,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ita.tech.eveniment.model.InformacionRecursoModel
+import ita.tech.eveniment.model.InformacionRssModel
+import ita.tech.eveniment.model.RssEntry
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
@@ -41,6 +43,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Base64
 import java.util.Collections
 import java.util.Locale
 import javax.inject.Inject
@@ -60,9 +63,20 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     var stateEveniment by mutableStateOf(EvenimentState())
         private set
 
+    // Variables para la Lista de reproduccion PRINCIPAL
     private val _recursos_tmp = MutableStateFlow<List<InformacionRecursoModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
-    private val _recursos = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())     // Almacenara la lista de recursos cuando la tenga hasta el path local.
+    private val _recursos = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())     // Almacenara la lista de recursos cuando tenga path local.
     val recursos = _recursos.asStateFlow()
+
+    // Variables para la lista de reproduccion PLANTILLA
+    private val _recursos_plantilla_tmp = MutableStateFlow<List<InformacionRecursoModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
+    private val _recursos_plantilla = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())     // Almacenara la lista de recursos cuando tenga path local.
+    val recursos_plantilla = _recursos_plantilla.asStateFlow()
+
+    // Variables para obtener noticias RSS
+    var noticias_rss by mutableStateOf("")
+        private set
+
 
     /**
      * Almacena los IDs de los recursos a descargar
@@ -109,6 +123,9 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
     fun setEstatusInternet( status: Boolean ){
         stateEveniment = stateEveniment.copy( estatusInternet = status )
+    }
+    private fun setMostrarCarrucel(estatus: Boolean ){
+        stateEveniment = stateEveniment.copy( mostrarCarrucel = estatus )
     }
 
     /**
@@ -254,26 +271,53 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             }
         }
 
+
         // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
         val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
-        //-- API Descargamos recursos de la LISTA DE REPRODUCCION
+        //-- API Descargamos recursos de la Lista de Reproduccion (PLANTILLA)
+        // Plantillas con Lista de Reproduccion independiente: 11, 12, 13
+        if( stateInformacionPantalla.id_lista_reproduccion > 0 ){
+            obtenerInformacionRecursosPlantilla()
+        }
+
+        //-- API RSS
+        if(stateInformacionPantalla.tipo_disenio == "13"){
+            obtenerInformacionRss()
+        }
+
+
+        // Obtenemos los recursos descargables.
+        val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
+
+        //-- API Descargamos recursos de la Lista de Reproduccion (PRINCIPAL)
         obtenerInformacionRecursos()
 
         // Obtenemos los recursos descargables.
-        val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
+        val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
 
         // Almacenamos el Total de recursos a descargar más los recursos de pantalla
         withContext(Dispatchers.Main) {
             stateEveniment =
-                stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size)
+                stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size + recursosDescargablesPlantilla.size)
         }
 
         // Descargamos los recursos de pantalla
         descargarArchivosPantalla(recursosPantalla, context)
 
-        // Descargamos los recursos
+        // Descargamos los recursos de la lista de reproduccion (PRINCIPAL)
         descargarArchivos(recursosDescargables, context)
+        if(recursosDescargables.isEmpty()){
+            // Cambiamos la URL por el PATH Local
+            sustituyeUrlPorPathLocal()
+        }
+
+        // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
+        descargarArchivos(recursosDescargablesPlantilla, context)
+        if( recursosDescargablesPlantilla.isEmpty() ){
+            // Cambiamos la URL por el PATH Local
+            sustituyeUrlPorPathLocalPlantilla()
+        }
 
         // Indicamos el momento en que se inicia la descarga
         withContext(Dispatchers.Main) {
@@ -292,6 +336,11 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
             //-- API Descargamos recursos de la PANTALLA
             obtenerInformacionPantalla()
+
+            //-- API Rss
+            if(stateInformacionPantalla.tipo_disenio == "13"){
+                obtenerInformacionRss()
+            }
 
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
             val recursosPantalla: List<String> = obtenerRecursosPantalla()
@@ -327,24 +376,43 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Descarga solo los recursos de la lista de reproducción.
      */
-    fun descargarInformacionListaReproduccion(context: Context, carrucelVM: CarrucelViewModel){
+    fun descargarInformacionListaReproduccion(context: Context){
         // stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
         viewModelScope.launch (Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+
+            //-- API Descargamos recursos de la Lista de Reproduccion (PLANTILLA)
+            if( stateInformacionPantalla.id_lista_reproduccion > 0 ){
+                obtenerInformacionRecursosPlantilla()
+            }
+
+            // Obtenemos los recursos descargables.
+            val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
 
             //-- API Descargamos recursos de la LISTA DE REPRODUCCION
             obtenerInformacionRecursos()
 
             // Obtenemos los recursos descargables.
-            val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables()
+            val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
 
             // Almacenamos el Total de recursos a descargar más los recursos de pantalla
             withContext(Dispatchers.Main) {
-                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size)
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosDescargablesPlantilla.size)
             }
 
             // Descargamos los recursos
             descargarArchivos(recursosDescargables, context)
+            if(recursosDescargables.isEmpty()){
+                // Cambiamos la URL por el PATH Local
+                sustituyeUrlPorPathLocal()
+            }
+
+            // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
+            descargarArchivos(recursosDescargablesPlantilla, context)
+            if( recursosDescargablesPlantilla.isEmpty() ){
+                // Cambiamos la URL por el PATH Local
+                sustituyeUrlPorPathLocalPlantilla()
+            }
 
             // Indicamos el momento en que se inicia la descarga
             withContext(Dispatchers.Main) {
@@ -353,7 +421,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 } else {
                     // Quitamos etiqueta de Descarga
                     stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
-                    carrucelVM.resetCarrucel()
+                    resetCarrucel()
                 }
             }
         }
@@ -368,6 +436,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                     subdominio = result?.subdominio ?: "",
                     nombreArchivo = result?.nombreArchivo ?: "",
                     tipo_disenio = result?.tipo_disenio ?: "",
+                    id_lista_reproduccion = result?.id_lista_reproduccion ?: 0,
                     duracion_slide = result?.duracion_slide ?: "",
                     logo = result?.logo ?: "",
                     logo_app = result?.logo_app ?: "",
@@ -437,11 +506,15 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         _recursosId.clear()
     }
 
+    /**
+     * Obtiene los recursos de la lista de reproduccion principal
+     */
     private suspend fun obtenerInformacionRecursos() {
         try {
             val result = repository.obtenerInformacionRecursos(
                 stateEveniment.idDispositivo,
-                stateInformacionPantalla.tipo_fuente_eventos
+                stateInformacionPantalla.tipo_fuente_eventos,
+                0
             )
             _recursos_tmp.value = result ?: emptyList()
         } catch (e: Exception) {
@@ -451,12 +524,29 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     /**
+     * Obtiene los recursos de la lista de reproduccion de la plantilla
+     */
+    private suspend fun obtenerInformacionRecursosPlantilla() {
+        try {
+            val result = repository.obtenerInformacionRecursos(
+                stateEveniment.idDispositivo,
+                stateInformacionPantalla.tipo_fuente_eventos,
+                stateInformacionPantalla.id_lista_reproduccion
+            )
+            _recursos_plantilla_tmp.value = result ?: emptyList()
+        } catch (e: Exception) {
+            _recursos_plantilla_tmp.value = emptyList()
+            println("Error API recursos: " + e.message)
+        }
+    }
+
+    /**
      * Obtiene una lista de los recursos que se pueden descargar (Imagenes y Videos).
      */
-    private fun obtenerRecursosDescargables(): List<InformacionRecursoModel>{
+    private fun obtenerRecursosDescargables( recursos: MutableStateFlow<List<InformacionRecursoModel>> ): List<InformacionRecursoModel>{
         var nuevaListaRecursos: List<InformacionRecursoModel> = emptyList()
-        if(_recursos_tmp.value.isNotEmpty()){
-            nuevaListaRecursos = _recursos_tmp.value.filter { recurso -> recurso.tipo_slide == "video" || recurso.tipo_slide == "imagen" }
+        if(recursos.value.isNotEmpty()){
+            nuevaListaRecursos = recursos.value.filter { recurso -> recurso.tipo_slide == "video" || recurso.tipo_slide == "imagen" }
         }
         return validaRecursoExistente( obtenerRecursosUnicos(nuevaListaRecursos) )
     }
@@ -512,10 +602,10 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 _recursosId.add( descargar(context, recursoNombre, recursoDatos, carpeta ) )
             }
         }
-        else{
+        // else{
             // Cambiamos la URL por el PATH Local
-            sustituyeUrlPorPathLocal()
-        }
+            // sustituyeUrlPorPathLocal()
+        // }
     }
 
     private fun descargarArchivosPantalla(listaRecursos: List<String>, context: Context){
@@ -569,6 +659,22 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             }
         }
         _recursos.value = nuevaListaRecursos
+    }
+
+    fun sustituyeUrlPorPathLocalPlantilla(){
+        val nuevaListaRecursos = mutableListOf<InformacionRecursoModel>()
+        if(_recursos_plantilla_tmp.value.isNotEmpty()){
+            _recursos_plantilla_tmp.value.forEach{ recurso ->
+                val recursoDatosNombre = obtenerNombreUrl( recurso.datos.toString() )
+                if(recurso.tipo_slide=="imagen"){
+                    recurso.datos = "$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre"
+                }else if(recurso.tipo_slide=="video"){
+                    recurso.datos = "$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre"
+                }
+                nuevaListaRecursos.add( recurso )
+            }
+        }
+        _recursos_plantilla.value = nuevaListaRecursos
     }
 
     /**
@@ -691,6 +797,69 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     private fun forzarOrientacionHorizontal(): Int {
         println("*** orientacion horizontal")
         return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    }
+
+    /**
+     * Oculta y vuelve a mostrar el carrucel para reiniciar el composable
+     */
+    fun resetCarrucel(){
+        viewModelScope.launch {
+            setMostrarCarrucel(false)
+            delay(500)
+            setMostrarCarrucel(true)
+        }
+    }
+
+    private suspend fun obtenerInformacionRss(){
+        try {
+            var tmpNoticiasRss: List<RssEntry> = emptyList()
+            val result = repository.obtenerInformacionRss(stateEveniment.idDispositivo)
+            if (result != null) {
+                tmpNoticiasRss = result
+            }
+            val textNoticias: String = obtenerInformacionRssTitle(tmpNoticiasRss)
+
+            withContext(Dispatchers.Main){
+                // Decodificar Mensaje
+                noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
+            }
+
+        }catch (e: Exception){
+            println(e.message)
+        }
+    }
+
+    private fun obtenerInformacionRssTitle(rssNoticias: List<RssEntry>): String{
+        val listaNoticias = mutableListOf<String>()
+        if( rssNoticias.isNotEmpty() ){
+            rssNoticias.forEach { row ->
+                val noticias = row.noticias
+                if(noticias.isNotEmpty()){
+                    noticias.forEach{ noticia ->
+                        listaNoticias.add(noticia.value.title)
+                    }
+                }
+            }
+        }
+        return listaNoticias.joinToString(separator = "    •    ")
+    }
+
+    private fun decoderTextRss( cadena: String ): String{
+        var texto: String = ""
+        if(cadena.isNotEmpty()){
+            // Get a Base64 decoder instance
+            val decoder: Base64.Decoder = Base64.getDecoder()
+
+            // Decode the Base64 string to a byte array
+            val decodedBytes: ByteArray = decoder.decode(cadena)
+
+            // Convert the byte array back to a String (assuming UTF-8 encoding)
+            // val decodedString: String = String(decodedBytes, Charsets.UTF_8)
+            val decodedString: String = String(decodedBytes)
+
+            texto = decodedString.replace(",","    •    ")
+        }
+        return texto
     }
 
 }
