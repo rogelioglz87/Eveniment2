@@ -14,13 +14,13 @@ import ita.tech.eveniment.views.SplashScreenView
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun NavManager(procesoVM: ProcesoViewModel, carrucelVM: CarrucelViewModel){
+fun NavManager(procesoVM: ProcesoViewModel){
 
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "SplashScreen"){
         composable("Home") {
-            HomeView(procesoVM, carrucelVM, navController)
+            HomeView(procesoVM, navController)
         }
         composable("SplashScreen") {
             SplashScreenView(navController, procesoVM)

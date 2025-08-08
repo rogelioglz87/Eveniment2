@@ -28,17 +28,19 @@ import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Doce
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Dos
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Tres
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Once
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Trece
 
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun HomeView(
     procesoVM: ProcesoViewModel,
-    carrucelVM: CarrucelViewModel,
     navController: NavController
 ) {
 
@@ -49,6 +51,9 @@ fun HomeView(
 
     //-- Obtiene la lista de los recursos
     val recursos by procesoVM.recursos.collectAsState()
+
+    //-- Obtiene la lista de recursos de la plantilla
+    val recursosPlantilla by procesoVM.recursos_plantilla.collectAsState()
 
     //-- Conexión del Socket
     val mSocket = SocketHandler.getSocket()
@@ -77,7 +82,7 @@ fun HomeView(
                 // Validamos si actualizamos los recursos en caso de una reconexión
                 if( contadorInternet > 0 )
                 {
-                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+                    procesoVM.descargarInformacionListaReproduccion(context)
                 }
             }
             contadorInternet++;
@@ -88,6 +93,8 @@ fun HomeView(
             {
                 reiniciarAppBand = true;
             }
+
+            // Obtener informacion Local
         }
     }
 
@@ -108,7 +115,7 @@ fun HomeView(
                 //-- Actualiza la lista de reproducción
                 if (comando == "actualizar_recursos")
                 {
-                    procesoVM.descargarInformacionListaReproduccion(context, carrucelVM)
+                    procesoVM.descargarInformacionListaReproduccion(context)
                 }
                 //-- Actualizar los datos del dispositivo
                 else if(comando == "actualizar_datos_dispositivo")
@@ -131,27 +138,39 @@ fun HomeView(
             //-- Muestra la plantilla seleccionada
             when (stateInformacionPantalla.tipo_disenio) {
                 "1" -> {
-                    Plantilla_Horizontal_Uno(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Horizontal_Uno(recursos, procesoVM)
                 }
 
                 "2" -> {
-                    Plantilla_Horizontal_Dos(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Horizontal_Dos(recursos, procesoVM)
                 }
 
                 "3" -> {
-                    Plantilla_Horizontal_Tres(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Horizontal_Tres(recursos, procesoVM)
                 }
 
                 "4" -> {
-                    Plantilla_Horizontal_Cuatro(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Horizontal_Cuatro(recursos, procesoVM)
                 }
 
                 "5" -> {
-                    Plantilla_Horizontal_Cinco(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Horizontal_Cinco(recursos, procesoVM)
                 }
 
                 "9" -> {
-                    Plantilla_Vertical_Nueve(carrucelVM, recursos, procesoVM, context)
+                    Plantilla_Vertical_Nueve(recursos, procesoVM)
+                }
+
+                "11" -> {
+                    Plantilla_Horizontal_Once(recursos, procesoVM, recursosPlantilla)
+                }
+
+                "12" -> {
+                    Plantilla_Horizontal_Doce(recursos, procesoVM, recursosPlantilla)
+                }
+
+                "13" -> {
+                    Plantilla_Horizontal_Trece(recursos, procesoVM, recursosPlantilla)
                 }
 
                 else -> {
@@ -168,7 +187,7 @@ fun HomeView(
                         .padding(8.dp)
                         .align(Alignment.BottomStart)
                 ) {
-                    DownloadLabel(procesoVM, carrucelVM)
+                    DownloadLabel(procesoVM)
                 }
             }
         }

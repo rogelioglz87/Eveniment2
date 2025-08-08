@@ -1,7 +1,5 @@
 package ita.tech.eveniment.viewModels
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -63,14 +61,16 @@ class CarrucelViewModel: ViewModel() {
     fun setTiposlide( tipo: String ){
         stateCarrucel = stateCarrucel.copy( tipoSlide = tipo )
     }
-
+    /*
     private fun setMostrarCarrucel(estatus: Boolean ){
         stateCarrucel = stateCarrucel.copy( mostrarCarrucel = estatus )
     }
+    */
 
     /**
      * Oculta y vuelve a mostrar el carrucel para reiniciar el composable
      */
+    /*
     fun resetCarrucel(){
         viewModelScope.launch {
             setMostrarCarrucel(false)
@@ -78,8 +78,5 @@ class CarrucelViewModel: ViewModel() {
             setMostrarCarrucel(true)
         }
     }
-
-
-
-
+    */
 }

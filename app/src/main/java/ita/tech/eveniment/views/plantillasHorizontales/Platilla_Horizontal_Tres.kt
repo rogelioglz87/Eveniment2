@@ -22,10 +22,8 @@ import ita.tech.eveniment.viewModels.ProcesoViewModel
 
 @Composable
 fun Plantilla_Horizontal_Tres(
-    carrucelVM: CarrucelViewModel,
     recursos: List<InformacionRecursoModel>,
-    procesoVM: ProcesoViewModel,
-    context: Context
+    procesoVM: ProcesoViewModel
 ){
     Column(
         modifier = Modifier
@@ -46,18 +44,8 @@ fun Plantilla_Horizontal_Tres(
                 .weight(0.75f) // 75% del espacio vertical disponible
                 .fillMaxWidth()
         ) {
-            if(carrucelVM.stateCarrucel.mostrarCarrucel){
-
-                // Validamos si la lista contiene recursos, en caso de que NO mostramos imagen por default.
-                if( recursos.isEmpty() )
-                {
-                    RecursoImagen(rutaImagen = procesoVM.stateInformacionPantalla.nombreArchivo, context = context)
-                }
-                else
-                {
-                    Carrucel(carrucelVM, recursos)
-                }
-
+            if(procesoVM.stateEveniment.mostrarCarrucel){
+                Carrucel(recursos, procesoVM.stateInformacionPantalla.nombreArchivo, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier

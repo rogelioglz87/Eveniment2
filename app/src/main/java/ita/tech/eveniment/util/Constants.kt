@@ -13,6 +13,7 @@ class Constants {
         const val ALTA_DISPOSITIVO = "altaPantalla.php"
         const val INFORMACION_PANTALLA = "obtenerInformacionPantalla.php"
         const val INFORMACION_RECURSOS = "obtener_eventos.php"
+        const val INFORMACION_RSS = "obtener_rss_ws_json.php";
 
         // SOCKET
         const val SOCKET_URL = "https://servicionj.itatechapps.com/"

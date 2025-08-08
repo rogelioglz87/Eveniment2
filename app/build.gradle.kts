@@ -126,7 +126,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0-beta01")
 
     //-- API YouTube
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.1")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2")
 
     //-- API CHECK INTERNET
     implementation("com.github.pwittchen:reactivenetwork-rx2:3.0.8")

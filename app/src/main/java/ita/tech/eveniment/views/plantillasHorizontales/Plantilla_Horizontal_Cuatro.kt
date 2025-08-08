@@ -26,10 +26,8 @@ import ita.tech.eveniment.viewModels.RecursoVideoModel
 
 @Composable
 fun Plantilla_Horizontal_Cuatro(
-    carrucelVM: CarrucelViewModel,
     recursos: List<InformacionRecursoModel>,
-    procesoVM: ProcesoViewModel,
-    context: Context
+    procesoVM: ProcesoViewModel
 ){
 
     Row(
@@ -43,18 +41,8 @@ fun Plantilla_Horizontal_Cuatro(
                 .fillMaxHeight()
                 .background(Color.Black)
         ) {
-            if(carrucelVM.stateCarrucel.mostrarCarrucel){
-
-                // Validamos si la lista contiene recursos, en caso de que NO mostramos imagen por default.
-                if( recursos.isEmpty() )
-                {
-                    RecursoImagen(rutaImagen = procesoVM.stateInformacionPantalla.nombreArchivo, context = context)
-                }
-                else
-                {
-                    Carrucel(carrucelVM, recursos)
-                }
-
+            if(procesoVM.stateEveniment.mostrarCarrucel){
+                Carrucel(recursos, procesoVM.stateInformacionPantalla.nombreArchivo, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier
