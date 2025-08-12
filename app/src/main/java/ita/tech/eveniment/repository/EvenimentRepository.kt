@@ -3,9 +3,7 @@ package ita.tech.eveniment.repository
 import ita.tech.eveniment.data.ApiEveniment
 import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.model.InformacionRssModel
 import ita.tech.eveniment.model.RssEntry
-import ita.tech.eveniment.model.RssResponse
 import javax.inject.Inject
 
 class EvenimentRepository @Inject constructor(private val apiEveniment: ApiEveniment) {

@@ -1,11 +1,16 @@
 package ita.tech.eveniment.di
 
+import android.content.Context
+import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ita.tech.eveniment.data.ApiEveniment
 import ita.tech.eveniment.interceptor.Authentication
+import ita.tech.eveniment.room.EvenimentDatabase
+import ita.tech.eveniment.room.InformacionPantallaDatabaseDao
 import ita.tech.eveniment.util.Constants.Companion.AUTH_PASS
 import ita.tech.eveniment.util.Constants.Companion.AUTH_USER
 import ita.tech.eveniment.util.Constants.Companion.BASE_URL
@@ -19,6 +24,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    // Configuracion Retrofit
     @Singleton
     @Provides
     fun providesRetrofit(): Retrofit{
@@ -34,6 +40,25 @@ object AppModule {
     @Provides
     fun providesApiEveniment( retrofit: Retrofit ): ApiEveniment{
         return retrofit.create(ApiEveniment::class.java)
+    }
+
+    // Configuracion ROOM
+    @Singleton
+    @Provides
+    fun providesEvenimentDatabase(@ApplicationContext context: Context): EvenimentDatabase{
+        return Room.databaseBuilder(
+            context,
+            EvenimentDatabase::class.java, "eveniment_db",
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Singleton
+    @Provides
+    fun providesInformacionPantallaDao( evenimentDatabase: EvenimentDatabase ): InformacionPantallaDatabaseDao{
+        return evenimentDatabase.informacionPantallaDao()
+
     }
 
 }
