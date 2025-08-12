@@ -1,6 +1,9 @@
 package ita.tech.eveniment
 
 import android.Manifest
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -26,6 +29,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import ita.tech.eveniment.broadcast.MyDeviceAdminReceiver
 import ita.tech.eveniment.navegation.NavManager
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
@@ -43,6 +47,14 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val componentName = ComponentName(this, MyDeviceAdminReceiver::class.java)
+        if (dpm.isDeviceOwnerApp(packageName)) {
+            println("***DEVICE OWNER")
+            startLockTask()
+        }
 
         val procesoVM: ProcesoViewModel by viewModels()
 
