@@ -24,7 +24,6 @@ import androidx.navigation.NavController
 import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
@@ -67,6 +66,9 @@ fun HomeView(
         {
             if( reiniciarAppBand )
             {
+                // Colocamos en false la variable isAppInitialized para que inicie la descarga de informacion
+                procesoVM.resetAppInitialized()
+
                 // En caso de iniciar la App sin internet, se enviara a la pantalla de Splash para descargar los recursos
                 navController.navigate("SplashScreen"){
                     popUpTo(0){ saveState = false }

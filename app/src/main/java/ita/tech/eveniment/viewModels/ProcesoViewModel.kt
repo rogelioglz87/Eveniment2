@@ -15,11 +15,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ita.tech.eveniment.model.InformacionPantallaDB
+import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.InformacionRssModel
 import ita.tech.eveniment.model.RssEntry
 import ita.tech.eveniment.repository.EvenimentRepository
+import ita.tech.eveniment.repository.InformacionPantallaRepository
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
 import ita.tech.eveniment.util.Constants.Companion.CENTRO_DEFAULT
@@ -33,6 +38,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -50,7 +56,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepository) :
+class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepository, private val informacionPantallaRepository: InformacionPantallaRepository) :
     ViewModel() {
 
         // Bandera para inicializar la App
@@ -77,6 +83,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     var noticias_rss by mutableStateOf("")
         private set
 
+    private val gson = Gson()
 
     /**
      * Almacena los IDs de los recursos a descargar
@@ -128,12 +135,16 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         stateEveniment = stateEveniment.copy( mostrarCarrucel = estatus )
     }
 
+    fun resetAppInitialized(){
+        _isAppInitialized.value = false;
+    }
+
     /**
      * Inicializa la app de forma asincrona
      */
     fun initializeApplication(context: Context) {
         viewModelScope.launch(Dispatchers.IO) { // Toda esta lógica se ejecuta en un hilo IO
-            Log.d(" ProcesoViewModel", "Iniciando initializeApplication...")
+            Log.d(" ProcesoViewModel", "Iniciando initializeApplication")
 
             val creacionCarpetas: Boolean = crearDirectoriosGenerales()
             if (creacionCarpetas) {
@@ -142,7 +153,6 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 obtenerIdDevices(context)
                 obtenerIpAdress()
                 altaDispositivo(CENTRO_DEFAULT)
-
                 descargarInformacion(context) // Esto ya lanza su propia coroutine con IO
 
                 _isAppInitialized.value = true
@@ -428,49 +438,72 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     private suspend fun obtenerInformacionPantalla() {
+        var result: InformacionPantallaModel? = null
         try {
-            val result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
-            withContext(Dispatchers.Main) {
-                stateInformacionPantalla = stateInformacionPantalla.copy(
-                    centro = result?.centro ?: "",
-                    subdominio = result?.subdominio ?: "",
-                    nombreArchivo = result?.nombreArchivo ?: "",
-                    tipo_disenio = result?.tipo_disenio ?: "",
-                    id_lista_reproduccion = result?.id_lista_reproduccion ?: 0,
-                    duracion_slide = result?.duracion_slide ?: "",
-                    logo = result?.logo ?: "",
-                    logo_app = result?.logo_app ?: "",
-                    color_primario = result?.color_primario ?: "",
-                    color_secundario = result?.color_secundario ?: "",
-                    color_boton = result?.color_boton ?: "",
-                    color_texto = result?.color_texto ?: "",
-                    color_logo = result?.color_logo ?: "",
-                    efecto_app = result?.efecto_app ?: "",
-                    fuente_link = result?.fuente_link ?: "",
-                    fuente_nombre = result?.fuente_nombre ?: "",
-                    tituloCentro = result?.tituloCentro ?: "",
-                    textoLibre = result?.textoLibre ?: "",
-                    nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
-                    nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
-                    eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
-                    idSeccion = result?.idSeccion ?: "",
-                    u_logo_app = result?.u_logo_app ?: "",
-                    u_color_primario = result?.u_color_primario ?: "",
-                    u_color_secundario = result?.u_color_secundario ?: "",
-                    u_color_texto = result?.u_color_texto ?: "",
-                    u_color_logo = result?.u_color_logo ?: "",
-                    u_efecto_app = result?.u_efecto_app ?: "",
-                    video_alerta = result?.video_alerta ?: "",
-                    time_zone = result?.time_zone ?: "America/Mexico_City",
-                    tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
-                    rss_adicional = result?.rss_adicional ?: "",
-                    id_pantalla = result?.id_pantalla ?: "",
-                    calendario_operativo = result?.calendario_operativo ?: ""
+            result = repository.obtenerInformacionPantalla(stateEveniment.idDispositivo)
+
+            // Guardamos el resultado en Room.
+            if( result != null ){
+                informacionPantallaRepository.clear("informacionPantalla")
+                informacionPantallaRepository.insert(
+                    InformacionPantallaDB(
+                        concepto = "informacionPantalla",
+                        valor = gson.toJson(result)
+                    )
                 )
+            }else{
+                // La red respondio, pero sin datos, intentamos usar la BD.
+                throw Exception("Respuesta de la red Nula.")
             }
         } catch (e: Exception) {
-            println(e.message)
+
+            // En caso de algun error buscamos informacion de forma Local.
+            val informacionLocal = informacionPantallaRepository.getInformacion("informacionPantalla").firstOrNull()
+            if( informacionLocal != null ){
+                result = gson.fromJson(informacionLocal.valor, InformacionPantallaModel::class.java)
+            }
         }
+
+        withContext(Dispatchers.Main) {
+            stateInformacionPantalla = stateInformacionPantalla.copy(
+                centro = result?.centro ?: "",
+                subdominio = result?.subdominio ?: "",
+                nombreArchivo = result?.nombreArchivo ?: "",
+                tipo_disenio = result?.tipo_disenio ?: "",
+                id_lista_reproduccion = result?.id_lista_reproduccion ?: 0,
+                duracion_slide = result?.duracion_slide ?: "",
+                logo = result?.logo ?: "",
+                logo_app = result?.logo_app ?: "",
+                color_primario = result?.color_primario ?: "",
+                color_secundario = result?.color_secundario ?: "",
+                color_boton = result?.color_boton ?: "",
+                color_texto = result?.color_texto ?: "",
+                color_logo = result?.color_logo ?: "",
+                efecto_app = result?.efecto_app ?: "",
+                fuente_link = result?.fuente_link ?: "",
+                fuente_nombre = result?.fuente_nombre ?: "",
+                tituloCentro = result?.tituloCentro ?: "",
+                textoLibre = result?.textoLibre ?: "",
+                nombreArchivoImgDisenioDos = result?.nombreArchivoImgDisenioDos ?: "",
+                nombreArchivoImgDisenioTres = result?.nombreArchivoImgDisenioTres ?: "",
+                eventos_texto_agrupado = result?.eventos_texto_agrupado ?: "",
+                idSeccion = result?.idSeccion ?: "",
+                u_logo_app = result?.u_logo_app ?: "",
+                u_color_primario = result?.u_color_primario ?: "",
+                u_color_secundario = result?.u_color_secundario ?: "",
+                u_color_texto = result?.u_color_texto ?: "",
+                u_color_logo = result?.u_color_logo ?: "",
+                u_efecto_app = result?.u_efecto_app ?: "",
+                video_alerta = result?.video_alerta ?: "",
+                time_zone = result?.time_zone ?: "America/Mexico_City",
+                tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
+                rss_adicional = result?.rss_adicional ?: "",
+                id_pantalla = result?.id_pantalla ?: "",
+                calendario_operativo = result?.calendario_operativo ?: ""
+            )
+        }
+        
+
     }
 
     /**
@@ -510,16 +543,33 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      * Obtiene los recursos de la lista de reproduccion principal
      */
     private suspend fun obtenerInformacionRecursos() {
+        var result: List<InformacionRecursoModel>? = null
+
         try {
-            val result = repository.obtenerInformacionRecursos(
+            result = repository.obtenerInformacionRecursos(
                 stateEveniment.idDispositivo,
                 stateInformacionPantalla.tipo_fuente_eventos,
                 0
             )
             _recursos_tmp.value = result ?: emptyList()
+
+            informacionPantallaRepository.clear("informacionRecursos")
+            informacionPantallaRepository.insert(
+                InformacionPantallaDB(
+                    concepto = "informacionRecursos",
+                    valor = gson.toJson(_recursos_tmp.value)
+                )
+            )
         } catch (e: Exception) {
-            _recursos_tmp.value = emptyList()
-            println("Error API recursos: " + e.message)
+            // En caso de algun error buscamos informacion de forma Local.
+            val informacionLocal = informacionPantallaRepository.getInformacion("informacionRecursos").firstOrNull()
+            if( informacionLocal != null ){
+                val recursosLista = object : TypeToken<List<InformacionRecursoModel>>(){}.type
+                _recursos_tmp.value = gson.fromJson(informacionLocal.valor, recursosLista)
+            }else{
+                _recursos_tmp.value = emptyList()
+            }
+
         }
     }
 
@@ -527,16 +577,33 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      * Obtiene los recursos de la lista de reproduccion de la plantilla
      */
     private suspend fun obtenerInformacionRecursosPlantilla() {
+        var result: List<InformacionRecursoModel>? = null
+
         try {
-            val result = repository.obtenerInformacionRecursos(
+            result = repository.obtenerInformacionRecursos(
                 stateEveniment.idDispositivo,
                 stateInformacionPantalla.tipo_fuente_eventos,
                 stateInformacionPantalla.id_lista_reproduccion
             )
             _recursos_plantilla_tmp.value = result ?: emptyList()
+
+            informacionPantallaRepository.clear("informacionRecursosPlantilla")
+            informacionPantallaRepository.insert(
+                InformacionPantallaDB(
+                    concepto = "informacionRecursosPlantilla",
+                    valor = gson.toJson(_recursos_plantilla_tmp.value)
+                )
+            )
         } catch (e: Exception) {
+            // Obtener informacion Local
             _recursos_plantilla_tmp.value = emptyList()
-            println("Error API recursos: " + e.message)
+            val informacionLocal = informacionPantallaRepository.getInformacion("informacionRecursosPlantilla").firstOrNull()
+            if( informacionLocal != null ){
+                val recursosLista = object : TypeToken<List<InformacionRecursoModel>>(){}.type
+                _recursos_plantilla_tmp.value = gson.fromJson(informacionLocal.valor, recursosLista)
+            }else{
+                _recursos_plantilla_tmp.value = emptyList()
+            }
         }
     }
 
@@ -811,21 +878,37 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     private suspend fun obtenerInformacionRss(){
+        var tmpNoticiasRss: List<RssEntry> = emptyList()
+
         try {
-            var tmpNoticiasRss: List<RssEntry> = emptyList()
             val result = repository.obtenerInformacionRss(stateEveniment.idDispositivo)
             if (result != null) {
                 tmpNoticiasRss = result
+                // Almacenamos informacion RSS
+                informacionPantallaRepository.clear("informacionRSS")
+                informacionPantallaRepository.insert(
+                    InformacionPantallaDB(
+                        concepto = "informacionRSS",
+                        valor = gson.toJson(result)
+                    )
+                )
+            }else{
+                throw Exception("Respuesta de la red Nula.")
             }
-            val textNoticias: String = obtenerInformacionRssTitle(tmpNoticiasRss)
-
-            withContext(Dispatchers.Main){
-                // Decodificar Mensaje
-                noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
-            }
-
         }catch (e: Exception){
-            println(e.message)
+            // Obtener informacion de manera Local
+            val result = informacionPantallaRepository.getInformacion("informacionRSS").firstOrNull()
+            if( result != null ){
+                val rssLista = object : TypeToken<List<RssEntry>>(){}.type
+                tmpNoticiasRss = gson.fromJson(result.valor, rssLista)
+            }
+        }
+
+        val textNoticias: String = obtenerInformacionRssTitle(tmpNoticiasRss)
+
+        withContext(Dispatchers.Main){
+            // Decodificar Mensaje
+            noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
         }
     }
 

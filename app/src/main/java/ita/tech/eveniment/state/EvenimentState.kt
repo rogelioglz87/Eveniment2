@@ -30,6 +30,6 @@ data class EvenimentState(
     val u_color_logo: Color = Color(0xFFFFFFFF),
 
     //-- Mostrar/Ocultar carrucel
-    val mostrarCarrucel: Boolean = true
+    val mostrarCarrucel: Boolean = true,
 
 )
