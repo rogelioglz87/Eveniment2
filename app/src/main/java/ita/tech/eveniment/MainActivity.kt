@@ -14,7 +14,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,7 +33,6 @@ import ita.tech.eveniment.navegation.NavManager
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,6 +41,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private val disposables = CompositeDisposable() // Para manejar la suscripción de ReactiveNetwork
+    private var disconnectionTimestamp: Long = 0L // 0 significa que estamos conectados
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +51,6 @@ class MainActivity : ComponentActivity() {
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val componentName = ComponentName(this, MyDeviceAdminReceiver::class.java)
         if (dpm.isDeviceOwnerApp(packageName)) {
-            println("***DEVICE OWNER")
             startLockTask()
         }
 
@@ -89,7 +87,32 @@ class MainActivity : ComponentActivity() {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe { connectivity ->
-                            procesoVM.setEstatusInternet(connectivity)
+                            if( !connectivity ){
+                                if (disconnectionTimestamp == 0L) {
+                                    procesoVM.setEstatusInternet(connectivity)
+                                    disconnectionTimestamp = System.currentTimeMillis()
+                                }
+                            }
+                            else{
+                                if (disconnectionTimestamp > 0L) { // Desconexion previa
+                                    val tiempoDesconectado =
+                                        System.currentTimeMillis() - disconnectionTimestamp
+                                    if (tiempoDesconectado > 10000) { // 10,000 milisegundos = 10 segundos
+                                        // Actualizar estado
+                                        procesoVM.setEstatusInternet(connectivity)
+                                    } else {
+                                        // NO SE ACTUALIZA: La desconexión fue demasiado breve
+                                    }
+
+                                    // Reseteamos la marca de tiempo porque ya hemos recuperado la conexión.
+                                    disconnectionTimestamp = 0L
+                                }
+                                else{
+                                    // En caso de que no exista una desconexion previa actualizamos estatus
+                                    procesoVM.setEstatusInternet(connectivity)
+                                }
+                            }
+
                         }
                     disposables.add(disposable)
                 }

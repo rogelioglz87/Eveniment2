@@ -64,6 +64,7 @@ fun HomeView(
     LaunchedEffect(stateEveniment.estatusInternet) {
         if( stateEveniment.estatusInternet )
         {
+            // INGRESA SI LA APP FUE INICIALIZADA SIN INTERNET
             if( reiniciarAppBand )
             {
                 // Colocamos en false la variable isAppInitialized para que inicie la descarga de informacion
@@ -76,6 +77,7 @@ fun HomeView(
                     restoreState = false
                 }
             }
+            // INGRESA SI LA APP DURANTE LA EJECUCION SE QUEDO SIN RED (SOLO ACTUALIZARA LA LISTA DE REPRODUCCION Y EL SOCKET)
             else
             {
                 // Conectamos el dispositivo al Socket
@@ -95,8 +97,6 @@ fun HomeView(
             {
                 reiniciarAppBand = true;
             }
-
-            // Obtener informacion Local
         }
     }
 
