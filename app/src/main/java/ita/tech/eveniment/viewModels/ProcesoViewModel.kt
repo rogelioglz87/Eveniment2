@@ -116,7 +116,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         stateEveniment = stateEveniment.copy(totalRecursos = total)
     }
 
-    fun setEstatusCarpetas( status: Boolean ){
+    private fun setEstatusCarpetas(status: Boolean ){
         stateEveniment = stateEveniment.copy(bandCarpetasCreadas = status)
     }
 
