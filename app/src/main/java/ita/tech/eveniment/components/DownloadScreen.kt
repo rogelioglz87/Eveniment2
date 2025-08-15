@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,8 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import ita.tech.eveniment.R
 import ita.tech.eveniment.broadcast.DescargarReceiver
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -42,6 +45,8 @@ fun DownloadScreen(procesoVM: ProcesoViewModel){
 
     //-- Contabiliza los recursos descargados
     var recursosDescargados: Int = 1;
+
+    val scope = rememberCoroutineScope()
 
     /**
      * Monitorea la descarga de los recursos
@@ -59,6 +64,9 @@ fun DownloadScreen(procesoVM: ProcesoViewModel){
                 procesoVM.setTotalRecursos(0)            // Inicializamos el Total de recursos a descargar
                 procesoVM.setTotalRecursosDescargados(0) // Inicializamos el Contador de recursos descargados
                 procesoVM.clearListaIdRecursos()         // Borramos los Ids de las descargas
+                scope.launch(Dispatchers.IO) {
+                    procesoVM.borrarRecursos()
+                }
             },
             onRecursoDescargado = {
                 procesoVM.setTotalRecursosDescargados(recursosDescargados)

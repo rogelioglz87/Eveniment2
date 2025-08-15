@@ -38,6 +38,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -215,7 +216,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Obtiene la IP del dispositivo.
      */
-    private suspend fun obtenerIpAdress() {
+    private fun obtenerIpAdress() {
         try {
             val interfaces: List<NetworkInterface> =
                 Collections.list(NetworkInterface.getNetworkInterfaces())
@@ -281,7 +282,6 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             }
         }
 
-
         // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
         val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
@@ -295,7 +295,6 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         if(stateInformacionPantalla.tipo_disenio == "13"){
             obtenerInformacionRss()
         }
-
 
         // Obtenemos los recursos descargables.
         val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
@@ -329,6 +328,11 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             sustituyeUrlPorPathLocalPlantilla()
         }
 
+        // Borramos recursos que no se ocupen
+        if( stateEveniment.totalRecursos == 0 ){
+            borrarRecursos()
+        }
+
         // Indicamos el momento en que se inicia la descarga
         withContext(Dispatchers.Main) {
             stateEveniment = if (stateEveniment.totalRecursos > 0) {
@@ -338,6 +342,121 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 stateEveniment.copy(bandDescargaRecursos = false)
             }
         }
+    }
+
+    fun borrarRecursos(){
+        // Borrar recursos de Pantalla
+        borrarRecursosPantalla()
+
+        // Borrar recursos de Lista de reproduccion
+        borrarRecursosListaReproduccion()
+    }
+
+    private fun borrarRecursosListaReproduccion(){
+        var listaRecursos: List<InformacionRecursoModel> = emptyList()
+        var listaRecursosPlantilla: List<InformacionRecursoModel> = emptyList()
+        val archivosImagenes: List<String> = listarArchivosDeCarpeta(FOLDER_EVENIMENT_IMAGENES)
+        val archivosVideos: List<String> = listarArchivosDeCarpeta(FOLDER_EVENIMENT_VIDEOS)
+        var bandBorrar: Boolean
+
+        if( _recursos.value.isNotEmpty() ){
+            listaRecursos = _recursos.value.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
+        }
+
+        // Lista de reproduccion de Plantilla
+        if( _recursos_plantilla.value.isNotEmpty() ){
+            listaRecursosPlantilla = _recursos_plantilla.value.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
+        }
+
+        val listaCompleta: List<InformacionRecursoModel> = listaRecursos + listaRecursosPlantilla
+        val listaCompletaUnica: List<InformacionRecursoModel> = obtenerRecursosUnicos( listaCompleta )
+
+        // Validamos Imagenes
+        if( archivosImagenes.isNotEmpty() ){
+            archivosImagenes.forEach { archivo ->
+                bandBorrar = true
+                run loop@{
+                    listaCompletaUnica.forEach { recurso ->
+                        if (archivo == obtenerNombreUrl(recurso.datos.toString())) {
+                            bandBorrar = false
+                            return@loop
+                        }
+                    }
+                }
+                // Borramos archivo
+                if( bandBorrar ){
+                    try {
+                        File("$FOLDER_EVENIMENT_IMAGENES/$archivo").delete()
+                    }catch (e:SecurityException){
+                        println("***Error al borrar el archivo: $FOLDER_EVENIMENT_IMAGENES/$archivo")
+                    }
+                }
+            }
+        }
+
+        // Validamos Videos
+        if( archivosVideos.isNotEmpty() ){
+            archivosVideos.forEach { archivo ->
+                bandBorrar = true
+                run loop@{
+                    listaCompletaUnica.forEach { recurso ->
+                        if( archivo == obtenerNombreUrl( recurso.datos.toString() ) ){
+                            bandBorrar = false
+                            return@loop
+                        }
+                    }
+                }
+
+                // Borramos archivo
+                if( bandBorrar ){
+                    try {
+                        File("$FOLDER_EVENIMENT_VIDEOS/$archivo").delete()
+                    }catch (e:SecurityException){
+                        println("***Error al borrar el archivo: $FOLDER_EVENIMENT_VIDEOS/$archivo")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Borra los recursos de la Pantalla que no se ocupen
+     */
+    private fun borrarRecursosPantalla(){
+        val archivos: List<String> = listarArchivosDeCarpeta(FOLDER_EVENIMENT_DATOS)
+        var bandBorrar: Boolean
+        if( archivos.isNotEmpty() ){
+            archivos.forEach { archivo ->
+                // Validamos si el archivo existe en los recursos de la pantalla, en caso de no existir se borra
+                bandBorrar = true
+                if( obtenerNombreUrl(stateInformacionPantalla.logo_app) == archivo ||
+                    obtenerNombreUrl(stateInformacionPantalla.nombreArchivo) == archivo ||
+                    obtenerNombreUrl(stateInformacionPantalla.nombreArchivoImgDisenioDos) == archivo ||
+                    obtenerNombreUrl(stateInformacionPantalla.nombreArchivoImgDisenioTres) == archivo ||
+                    obtenerNombreUrl(stateInformacionPantalla.u_logo_app) == archivo ||
+                    obtenerNombreUrl(stateInformacionPantalla.video_alerta) == archivo){
+                    bandBorrar = false
+                }
+                if( bandBorrar ){
+                    try {
+                        File("$FOLDER_EVENIMENT_DATOS/$archivo").delete()
+                    }catch (e:SecurityException){
+                        println("***Error al borrar el archivo: $FOLDER_EVENIMENT_DATOS/$archivo")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Lista los archivos de una ruta dada
+     */
+    private fun listarArchivosDeCarpeta(ruta: String): List<String>{
+        val path = File(ruta)
+        if( !path.exists() || !path.isDirectory ){
+            return emptyList()
+        }
+        return path.listFiles()?.map { it.name } ?: emptyList()
     }
 
     fun descargarInformacionPantalla(context: Context){
@@ -363,6 +482,18 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             // Obtenemos los recursos descargables.
             val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
 
+            // Descargamos los recursos de pantalla
+            descargarArchivosPantalla(recursosPantalla, context)
+
+            // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
+            descargarArchivos(recursosDescargablesPlantilla, context)
+            if( recursosDescargablesPlantilla.isEmpty() ){
+                // Cambiamos la URL por el PATH Local
+                sustituyeUrlPorPathLocalPlantilla()
+            }
+
+            // Borramos recursos que no se ocupen
+            borrarRecursos()
 
             withContext(Dispatchers.Main) {
                 // Obtenemos y convertimos los colores de la pantalla
@@ -376,34 +507,27 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 // Almacenamos el Total de recursos a descargar más los recursos de pantalla
                 stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size + recursosDescargablesPlantilla.size)
 
-                // Descargamos los recursos de pantalla
-                descargarArchivosPantalla(recursosPantalla, context)
-
-                // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
-                descargarArchivos(recursosDescargablesPlantilla, context)
-                if( recursosDescargablesPlantilla.isEmpty() ){
-                    // Cambiamos la URL por el PATH Local
-                    sustituyeUrlPorPathLocalPlantilla()
-                }
-
                 // Indicamos el momento en que se inicia la descarga
                 if( stateEveniment.totalRecursos > 0 ){
                     stateEveniment = stateEveniment.copy( bandInicioDescarga = true )
                 } else{
                     // Quitamos pantalla de Descarga
                     stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                    // Si la plantilla contiene una lista de reproduccion actualizamos
+                    if( stateInformacionPantalla.id_lista_reproduccion > 0 ){
+                        resetCarrucel()
+                    }
                 }
             }
 
         }
     }
 
-
     /**
      * Descarga solo los recursos de la lista de reproducción.
      */
     fun descargarInformacionListaReproduccion(context: Context){
-        // stateEveniment = stateEveniment.copy(bandDescargaLbl = true)
+
         viewModelScope.launch (Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
 
@@ -438,6 +562,11 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             if( recursosDescargablesPlantilla.isEmpty() ){
                 // Cambiamos la URL por el PATH Local
                 sustituyeUrlPorPathLocalPlantilla()
+            }
+
+            /// Borrar recursos de Lista de reproduccion
+            if(stateEveniment.totalRecursos == 0){
+                borrarRecursosListaReproduccion()
             }
 
             // Indicamos el momento en que se inicia la descarga

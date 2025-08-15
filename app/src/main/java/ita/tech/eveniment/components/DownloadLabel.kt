@@ -5,11 +5,14 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import ita.tech.eveniment.broadcast.DescargarReceiver
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -20,6 +23,8 @@ fun DownloadLabel(procesoVM: ProcesoViewModel){
 
     //-- Contabiliza los recursos descargados
     var recursosDescargados: Int = 1;
+
+    val scope = rememberCoroutineScope()
 
     DisposableEffect(stateEveniment.bandInicioDescarga) {
 
@@ -35,9 +40,10 @@ fun DownloadLabel(procesoVM: ProcesoViewModel){
                 procesoVM.setTotalRecursosDescargados(0)
                 procesoVM.clearListaIdRecursos() // Borramos los Ids de las descargas
                 procesoVM.setbandDescargaLbl(false)
-                // Actualizar informacion de pantalla
+                scope.launch(Dispatchers.IO) {
+                    procesoVM.borrarRecursos()
+                }
 
-                // Actualizar informacion de recursos
             },
             onRecursoDescargado = {
                 procesoVM.setTotalRecursosDescargados(recursosDescargados)
