@@ -8,11 +8,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
@@ -20,66 +22,42 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTube
 fun RecursoYouTube(
     videoId: String
 ){
+    val context = LocalContext.current
 
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val youTubePlayerView = remember { YouTubePlayerView(context).apply { this.enableAutomaticInitialization = false } }
 
-    val playerViewInstance = remember { mutableStateOf<YouTubePlayerView?>(null) }
+    DisposableEffect(youTubePlayerView) {
+        // Se ejecuta cuando el Composable entra en la composición
+        /*
+        youTubePlayerView.getYouTubePlayerWhenReady(object : YouTubePlayerCallback {
+            override fun onYouTubePlayer(youTubePlayer: YouTubePlayer) {
+                youTubePlayer.loadVideo(videoId, 0f)
+            }
+        }
+        */
+        val listener = object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                youTubePlayer.loadVideo(videoId, 0f)
+            }
+        }
+
+        val options = IFramePlayerOptions.Builder()
+            .controls(0)          // Oculta los controles de reproducción
+            .ivLoadPolicy(3)      // Oculta las anotaciones
+            .rel(0)               // No muestra videos relacionados al final
+            .build()
+
+        youTubePlayerView.initialize(listener, true, options)
+
+        onDispose {
+            youTubePlayerView.release()
+        }
+    }
 
     AndroidView(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(),
-        factory = { context ->
-            YouTubePlayerView(context).apply {
-                Log.d("ID VIDEO 1", videoId)
-                this.enableAutomaticInitialization = false
-
-                // Guardamos la instancia para el DisposableEffect
-                playerViewInstance.value = this
-
-                // Añadimos el observador del ciclo de vida
-                lifecycleOwner.lifecycle.addObserver(this)
-
-                // Inicializar el reproductor
-                /*
-                addYouTubePlayerListener(object: AbstractYouTubePlayerListener(){
-                    override fun onReady(youTubePlayer: YouTubePlayer) {
-                        super.onReady(youTubePlayer)
-                        youTubePlayer.loadVideo(videoId, 0f)
-                        youTubePlayer.play()
-
-                    }
-                })
-                */
-
-                // Opciones del reproductor (opcional, pero útil)
-                val playerOptions = IFramePlayerOptions.Builder()
-                    .controls(1) // Mostrar controles del reproductor
-                    .build()
-
-                this.initialize(object : AbstractYouTubePlayerListener(){
-                    override fun onReady(youTubePlayer: YouTubePlayer) {
-                        super.onReady(youTubePlayer)
-                        youTubePlayer.loadVideo(videoId, 0f)
-                        youTubePlayer.play()
-                    }
-                }, playerOptions)
-                // youTubePlayerView = this
-            }
-        }
+        factory = { youTubePlayerView }
     )
-
-    DisposableEffect(Unit) {
-        onDispose {
-/*
-            youTubePlayerView?.release()
-            youTubePlayerView = null
-*/
-
-            playerViewInstance.value?.apply {
-                lifecycleOwner.lifecycle.removeObserver(this)
-                release()
-            }
-        }
-    }
 }
