@@ -355,6 +355,15 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
             val recursosPantalla: List<String> = obtenerRecursosPantalla()
 
+            //-- API Descargamos recursos de la Lista de Reproduccion (PLANTILLA)
+            // Plantillas con Lista de Reproduccion independiente: 11, 12, 13
+            if( stateInformacionPantalla.id_lista_reproduccion > 0 ){
+                obtenerInformacionRecursosPlantilla()
+            }
+            // Obtenemos los recursos descargables.
+            val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
+
+
             withContext(Dispatchers.Main) {
                 // Obtenemos y convertimos los colores de la pantalla
                 convertirColoresPantalla()
@@ -365,10 +374,17 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 }
 
                 // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-                stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size)
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size + recursosDescargablesPlantilla.size)
 
                 // Descargamos los recursos de pantalla
                 descargarArchivosPantalla(recursosPantalla, context)
+
+                // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
+                descargarArchivos(recursosDescargablesPlantilla, context)
+                if( recursosDescargablesPlantilla.isEmpty() ){
+                    // Cambiamos la URL por el PATH Local
+                    sustituyeUrlPorPathLocalPlantilla()
+                }
 
                 // Indicamos el momento en que se inicia la descarga
                 if( stateEveniment.totalRecursos > 0 ){
