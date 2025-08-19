@@ -145,6 +145,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      */
     fun initializeApplication(context: Context) {
         viewModelScope.launch(Dispatchers.IO) { // Toda esta lógica se ejecuta en un hilo IO
+            delay(2000)
             Log.d(" ProcesoViewModel", "Iniciando initializeApplication")
 
             val creacionCarpetas: Boolean = crearDirectoriosGenerales()
