@@ -70,7 +70,8 @@ fun Plantilla_Horizontal_Trece(
                     // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
                     tipoSlideActualPrincipal = tipoSlide
                 })
-            }else{
+            }
+            else{
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -109,6 +110,7 @@ fun Plantilla_Horizontal_Trece(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.07f)
+                .background(Color.Black)
                 .constrainAs(rss){
                     bottom.linkTo(parent.bottom)
                 },

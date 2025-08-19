@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,12 +15,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
@@ -43,21 +49,25 @@ class MainActivity : ComponentActivity() {
     private val disposables = CompositeDisposable() // Para manejar la suscripción de ReactiveNetwork
     private var disconnectionTimestamp: Long = 0L // 0 significa que estamos conectados
 
+    // Instancia de DevicePolicyManager y ComponentName
+    private lateinit var dpm: DevicePolicyManager
+    private lateinit var adminComponent: ComponentName
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val componentName = ComponentName(this, MyDeviceAdminReceiver::class.java)
-        if (dpm.isDeviceOwnerApp(packageName)) {
-            startLockTask()
-        }
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
 
         val procesoVM: ProcesoViewModel by viewModels()
 
         enableEdgeToEdge()
         setContent {
+            // Estado para el permiso de administrador de dispositivo
+            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
+
             /**
              * Permisos para la lectura de archivos Locales
              */
@@ -70,7 +80,30 @@ class MainActivity : ComponentActivity() {
                 onResult = { isGranted -> permission = isGranted }
             )
 
+            // Launcher para el permiso de administrador de dispositivo
+            val deviceAdminLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                // Verificamos si el permiso de administrador se concedió después de la solicitud
+                isAdminActive = dpm.isAdminActive(adminComponent)
+                if (isAdminActive) {
+                    // Si se concedió, anclamos la pantalla
+                    println("***Si se concedió, anclamos la pantalla")
+                    startLockTask()
+                }
+            }
+
             LaunchedEffect(key1 = true) {
+                // Permiso: Administrador
+                if (!isAdminActive) {
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                        putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
+                        putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Esta aplicación necesita permisos de administrador para habilitar el modo Kiosco.")
+                    }
+                    deviceAdminLauncher.launch(intent)
+                }
+
+                // Permiso: Almacenamiento
                 if( !permission ){
                     permissionLaucher.launch( Manifest.permission.READ_EXTERNAL_STORAGE )
                 }
@@ -131,7 +164,14 @@ class MainActivity : ComponentActivity() {
             }
 
             EvenimentTheme {
-                NavManager(procesoVM)
+                if (isAdminActive && permission) {
+                    NavManager(procesoVM)
+                }else {
+                    // Muestra una pantalla de espera o de explicación si no hay permisos
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Esperando permisos para continuar...")
+                    }
+                }
             }
         }
     }
