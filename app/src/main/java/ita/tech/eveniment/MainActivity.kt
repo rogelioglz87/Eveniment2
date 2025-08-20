@@ -38,6 +38,7 @@ import ita.tech.eveniment.broadcast.MyDeviceAdminReceiver
 import ita.tech.eveniment.navegation.NavManager
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
+import ita.tech.eveniment.util.alarmaDeReinicio
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.Dispatchers
@@ -53,15 +54,18 @@ class MainActivity : ComponentActivity() {
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
 
+    val procesoVM: ProcesoViewModel by viewModels()
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Activamos alarma de reinicio para la App
+        alarmaDeReinicio(this)
+
         // Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
-
-        val procesoVM: ProcesoViewModel by viewModels()
 
         enableEdgeToEdge()
         setContent {
@@ -173,6 +177,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        // Reiniciar App (Se reemplazo por una Alarma generada en el Broadcast)
+        if( intent.action == "ACTION_RESTART_APP" ){
+            procesoVM.solicitaReinicioApp()
         }
     }
 

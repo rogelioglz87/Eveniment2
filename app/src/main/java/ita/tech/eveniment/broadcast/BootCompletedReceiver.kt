@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import ita.tech.eveniment.MainActivity
+import ita.tech.eveniment.util.alarmaDeReinicio
 
 class BootCompletedReceiver: BroadcastReceiver() {
 
@@ -14,6 +15,11 @@ class BootCompletedReceiver: BroadcastReceiver() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context?.startActivity(activityIntent)
+
+            // Reprograma la alarma de reinicio
+            if (context != null) {
+                alarmaDeReinicio(context)
+            }
         }
     }
 
