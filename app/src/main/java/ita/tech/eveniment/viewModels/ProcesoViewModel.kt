@@ -35,8 +35,10 @@ import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_VIDEOS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
@@ -69,6 +71,10 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
     var stateEveniment by mutableStateOf(EvenimentState())
         private set
+
+    // Variables de Reinicio App
+    private val _eventoDeReinicio = MutableSharedFlow<Unit>()
+    val eventoDeReinicio = _eventoDeReinicio.asSharedFlow()
 
     // Variables para la Lista de reproduccion PRINCIPAL
     private val _recursos_tmp = MutableStateFlow<List<InformacionRecursoModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
@@ -1089,6 +1095,12 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             texto = decodedString.replace(",","    •    ")
         }
         return texto
+    }
+
+    fun solicitaReinicioApp(){
+        viewModelScope.launch {
+            _eventoDeReinicio.emit(Unit)
+        }
     }
 
 }

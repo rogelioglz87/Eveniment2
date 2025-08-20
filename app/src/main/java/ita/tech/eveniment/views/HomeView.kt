@@ -1,5 +1,6 @@
 package ita.tech.eveniment.views
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -21,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import coil3.imageLoader
 import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
@@ -126,6 +129,12 @@ fun HomeView(
                 }
             }
         }
+
+        // Proceso de Reinicio App
+        procesoVM.eventoDeReinicio.collect{
+            println("***Reiniar App con funcion")
+            realizarReinicio(navController, context)
+        }
     }
 
     if (stateEveniment.bandDescargaRecursos) {
@@ -194,5 +203,23 @@ fun HomeView(
             }
         }
         
+    }
+}
+
+fun realizarReinicio(
+    navController: NavController,
+    context: Context
+){
+    val imagenLoader = context.imageLoader
+    imagenLoader.memoryCache?.clear()
+    imagenLoader.diskCache?.clear()
+
+    val startDestinationRoute = navController.graph.findStartDestination().route ?: return
+    navController.navigate(startDestinationRoute){
+        popUpTo(startDestinationRoute){
+            inclusive = true
+        }
+        launchSingleTop = true
+        restoreState = false
     }
 }
