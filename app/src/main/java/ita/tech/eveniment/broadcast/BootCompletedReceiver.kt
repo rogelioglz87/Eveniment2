@@ -15,11 +15,6 @@ class BootCompletedReceiver: BroadcastReceiver() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context?.startActivity(activityIntent)
-
-            // Reprograma la alarma de reinicio
-            if (context != null) {
-                alarmaDeReinicio(context)
-            }
         }
     }
 
