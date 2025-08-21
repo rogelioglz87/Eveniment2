@@ -60,7 +60,7 @@ fun Plantilla_Horizontal_Trece(
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
         Column(
             modifier = Modifier
-                .fillMaxHeight(0.93f)
+                .fillMaxHeight(0.95f)
                 .fillMaxWidth()
                 .background(Color.Black)
                 .constrainAs(contenidoPrincipal) {}
@@ -85,7 +85,7 @@ fun Plantilla_Horizontal_Trece(
         }
         Column(
             modifier = Modifier
-                .fillMaxHeight(0.93f)
+                .fillMaxHeight(0.95f)
                 .fillMaxWidth(animatedColumnWidth)
                 .background(Color.White)
                 .constrainAs(contenidoAnuncios) {
@@ -109,7 +109,7 @@ fun Plantilla_Horizontal_Trece(
         Column (
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.07f)
+                .fillMaxHeight(0.05f)
                 .background(Color.Black)
                 .constrainAs(rss){
                     bottom.linkTo(parent.bottom)
@@ -125,7 +125,7 @@ fun Plantilla_Horizontal_Trece(
                 maxLines = 1,
                 softWrap = false,
                 modifier = Modifier
-                    .padding(start = 10.dp, end = 10.dp)
+                    // .padding(start = 10.dp, end = 10.dp)
                     .basicMarquee(
                         iterations = Int.MAX_VALUE,
                         velocity = 60.dp, // Adjust scrolling speed

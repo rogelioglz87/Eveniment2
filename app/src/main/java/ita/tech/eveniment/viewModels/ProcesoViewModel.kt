@@ -1099,6 +1099,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
     fun solicitaReinicioApp(){
         viewModelScope.launch {
+            // Emite un evento que se ejecuta en el Composable 'HomeView' dentro del LaunchedEffect
             _eventoDeReinicio.emit(Unit)
         }
     }
