@@ -36,6 +36,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import ita.tech.eveniment.broadcast.MyDeviceAdminReceiver
 import ita.tech.eveniment.navegation.NavManager
+import ita.tech.eveniment.services.EvenimentServices
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
 import ita.tech.eveniment.util.alarmaDeReinicio
@@ -60,12 +61,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Activamos alarma de reinicio para la App
+        // -- Activamos alarma de reinicio para la App
         alarmaDeReinicio(this)
 
-        // Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
+        // -- Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
+
+        // -- Inicia el Monitoreo de la App
+        val serviceIntent = Intent(this, EvenimentServices::class.java)
+        startService(serviceIntent)
 
         enableEdgeToEdge()
         setContent {
