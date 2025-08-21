@@ -14,38 +14,31 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFram
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
 @Composable
-fun RecursoYouTube(
-    videoId: String
+fun RecursoYouTubeLista(
+    playlistId: String
 ){
     val context = LocalContext.current
 
     val youTubePlayerView = remember { YouTubePlayerView(context).apply {
         this.enableAutomaticInitialization = false
     } }
-    // val youTubePlayerView = remember { YouTubePlayerView(context) }
 
-    DisposableEffect(videoId) {
+    DisposableEffect(playlistId) {
         // Se ejecuta cuando el Composable entra en la composición
-/*
-        youTubePlayerView.getYouTubePlayerWhenReady(object : YouTubePlayerCallback {
-            override fun onYouTubePlayer(youTubePlayer: YouTubePlayer) {
-                youTubePlayer.loadVideo(videoId, 0f)
-            }
-        })
-*/
         val listener = object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
-                youTubePlayer.loadVideo(videoId, 0f)
+                youTubePlayer.play()
+
             }
         }
 
         val options = IFramePlayerOptions.Builder()
             .controls(0)          // Oculta los controles de reproducción
             .ivLoadPolicy(3)      // Oculta las anotaciones
-            // Si desactivamos los subtitulos por default del video, youtube activa los subtitulos automaticos para el video
-            // Se deja el video tal cual lo genera el usuario de Youtube con subtitulos o sin subtitulos
             // .ccLoadPolicy(1)      // Oculta las anotaciones
             .rel(0)               // No muestra videos relacionados al final
+            .listType("playlist")
+            .list(playlistId)
             .build()
 
         youTubePlayerView.initialize(listener, false, options)
