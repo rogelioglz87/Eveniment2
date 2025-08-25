@@ -58,6 +58,7 @@ fun Plantilla_Horizontal_Trece(
     ConstraintLayout(Modifier.fillMaxSize()) {
         val (contenidoPrincipal, contenidoAnuncios, rss) = createRefs()
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
+        val timeZone = procesoVM.stateInformacionPantalla.time_zone
         Column(
             modifier = Modifier
                 .fillMaxHeight(0.95f)
@@ -66,7 +67,7 @@ fun Plantilla_Horizontal_Trece(
                 .constrainAs(contenidoPrincipal) {}
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, imgDefault, onTipoSlideChange = { tipoSlide ->
+                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = { tipoSlide ->
                     // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
                     tipoSlideActualPrincipal = tipoSlide
                 })
@@ -93,7 +94,7 @@ fun Plantilla_Horizontal_Trece(
                 }
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursosPlantilla, imgDefault, onTipoSlideChange = {})
+                Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier

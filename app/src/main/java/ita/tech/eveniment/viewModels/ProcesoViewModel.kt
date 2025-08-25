@@ -21,7 +21,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ita.tech.eveniment.model.InformacionPantallaDB
 import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.model.InformacionRssModel
 import ita.tech.eveniment.model.RssEntry
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.repository.InformacionPantallaRepository
@@ -32,6 +31,10 @@ import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_DATOS
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_IMAGENES
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_VIDEOS
+import ita.tech.eveniment.util.formatTimeFechaEspaniol
+import ita.tech.eveniment.util.formatTimeFechaIngles
+import ita.tech.eveniment.util.formatTimeHora
+import ita.tech.eveniment.util.setTimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,7 +43,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,13 +50,8 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.net.NetworkInterface
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Collections
-import java.util.Locale
 import javax.inject.Inject
 
 
@@ -947,7 +944,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         cronJobTimer = viewModelScope.launch(Dispatchers.Default) {
             while (true){
                 delay(1000)
-                val tiempoActual = setTimeZone( System.currentTimeMillis() )
+                val tiempoActual = setTimeZone( System.currentTimeMillis(), stateInformacionPantalla.time_zone )
                 withContext(Dispatchers.Main) {
                     horaActual = formatTimeHora(tiempoActual)
                     fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
@@ -959,41 +956,6 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
 
     fun detenerTime(){
         cronJobTimer?.cancel()
-    }
-
-    private fun setTimeZone( timer: Long ): ZonedDateTime {
-        return ZonedDateTime.ofInstant(
-            Instant.ofEpochMilli(timer),
-            ZoneId.of(stateInformacionPantalla.time_zone)
-        )
-    }
-
-    private fun formatTimeHora(time: ZonedDateTime?): String{
-        val formato = DateTimeFormatter.ofPattern("HH:mm");
-        return if (time != null) {
-            time.format(formato)
-        }else{
-            ""
-        }
-    }
-
-    private fun formatTimeFechaEspaniol(time: ZonedDateTime?): String{
-        val formato = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES"));
-        return time?.format(formato)?.split(" ")?.mapIndexed { index, palabra ->
-            when (palabra) {
-                "de" -> palabra // Mantener "de" en minúscula
-                else -> palabra.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() } // Capitalizar otras palabras
-            }
-        }?.joinToString(" ") ?: ""
-    }
-
-    private fun formatTimeFechaIngles(time: ZonedDateTime?): String{
-        val formato = DateTimeFormatter.ofPattern("EEEE, dd MMMM", Locale.ENGLISH);
-        return if (time != null) {
-            time.format(formato)
-        }else{
-            ""
-        }
     }
 
     private fun determinaOrientacionPantalla(): Int{

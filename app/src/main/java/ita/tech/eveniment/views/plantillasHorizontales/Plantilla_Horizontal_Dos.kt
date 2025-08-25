@@ -26,6 +26,9 @@ fun Plantilla_Horizontal_Dos(
     recursos: List<InformacionRecursoModel>,
     procesoVM: ProcesoViewModel
 ){
+    val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
+    val timeZone = procesoVM.stateInformacionPantalla.time_zone
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -37,7 +40,7 @@ fun Plantilla_Horizontal_Dos(
                 .fillMaxWidth()
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, procesoVM.stateInformacionPantalla.nombreArchivo, onTipoSlideChange = {})
+                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier
