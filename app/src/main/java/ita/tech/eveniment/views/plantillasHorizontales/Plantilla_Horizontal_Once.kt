@@ -63,6 +63,7 @@ fun Plantilla_Horizontal_Once(
     ConstraintLayout(Modifier.fillMaxSize()) {
         val (contenidoPrincipal, contenidoAnuncios) = createRefs()
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
+        val timeZone = procesoVM.stateInformacionPantalla.time_zone
         Column(
             modifier = Modifier
                 .fillMaxHeight()
@@ -71,7 +72,7 @@ fun Plantilla_Horizontal_Once(
                 .constrainAs(contenidoPrincipal) {}
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, imgDefault, onTipoSlideChange = { tipoSlide ->
+                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = { tipoSlide ->
                     // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
                     tipoSlideActualPrincipal = tipoSlide
                 })
@@ -97,7 +98,7 @@ fun Plantilla_Horizontal_Once(
                 }
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursosPlantilla, imgDefault, onTipoSlideChange = {})
+                Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier

@@ -29,6 +29,8 @@ fun Plantilla_Horizontal_Cuatro(
     recursos: List<InformacionRecursoModel>,
     procesoVM: ProcesoViewModel
 ){
+    val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
+    val timeZone = procesoVM.stateInformacionPantalla.time_zone
 
     Row(
         modifier = Modifier
@@ -42,7 +44,7 @@ fun Plantilla_Horizontal_Cuatro(
                 .background(Color.Black)
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, procesoVM.stateInformacionPantalla.nombreArchivo, onTipoSlideChange = {})
+                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
             }else{
                 Column(
                     modifier = Modifier
