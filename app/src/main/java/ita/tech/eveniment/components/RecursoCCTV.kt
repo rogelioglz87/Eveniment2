@@ -2,26 +2,19 @@ package ita.tech.eveniment.components
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.SurfaceView
 import androidx.annotation.OptIn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -32,14 +25,10 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import ita.tech.eveniment.R
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -68,14 +57,12 @@ fun RecursoCCTV(path: String){
                 .fillMaxWidth()
                 .fillMaxHeight(),
             factory = { cont ->
-                /*
-                PlayerView(cont).apply {
+                /* PlayerView(cont).apply {
                     player = players[0]
                     useController = false
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
                     // (this.videoSurfaceView as? SurfaceView)?.setSecure(false)
-                }
-                */
+                } */
 
                 // Funciona con X98 mini Android 11 para el monitoreo
                 val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
@@ -106,9 +93,14 @@ fun RecursoCCTV(path: String){
                         .fillMaxWidth()
                         .fillMaxHeight(),
                     factory = { cont ->
-                        PlayerView(cont).apply {
+                        /* PlayerView(cont).apply {
                             player = players[0]
                             useController = false
+                        } */
+                        val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                        (view as PlayerView).apply {
+                            player = players[0]
+                            clipToOutline = true
                         }
                     }
                 )
@@ -123,9 +115,14 @@ fun RecursoCCTV(path: String){
                         .fillMaxWidth()
                         .fillMaxHeight(),
                     factory = { cont ->
-                        PlayerView(cont).apply {
+                        /* PlayerView(cont).apply {
                             player = players[1]
                             useController = false
+                        } */
+                        val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                        (view as PlayerView).apply {
+                            player = players[1]
+                            clipToOutline = true
                         }
                     }
                 )
@@ -153,10 +150,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[0]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[0]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -171,10 +173,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[1]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[1]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -195,10 +202,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[2]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[2]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -232,10 +244,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[0]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[0]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -250,10 +267,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[1]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[1]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -274,10 +296,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[2]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[2]
+                                clipToOutline = true
                             }
                         }
                     )
@@ -292,10 +319,15 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            PlayerView(cont).apply {
+                            /* PlayerView(cont).apply {
                                 player = players[3]
                                 useController = false
                                 keepScreenOn = true
+                            } */
+                            val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
+                            (view as PlayerView).apply {
+                                player = players[3]
+                                clipToOutline = true
                             }
                         }
                     )

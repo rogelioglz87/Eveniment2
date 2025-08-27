@@ -28,9 +28,16 @@ fun Plantilla_Horizontal_Cinco(
 
     Column(
         modifier = Modifier
+            /* Medidas: Normal */
+
+            .fillMaxHeight()
+            .fillMaxWidth()
+
             /* Medidas: Mundo E */
+            /*
             .fillMaxHeight(0.38f)
             .fillMaxWidth(0.75f)
+            */
 
             /* Medidas: Publicidad mini */
             /*
