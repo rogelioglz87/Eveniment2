@@ -69,6 +69,17 @@
         <!-- Reiniciar App -->
         <receiver android:name=".broadcast.RestartReceiver" />
 
+        <!-- Alarma Calendario -->
+        <receiver android:name=".broadcast.CalendarioReceiver" />
+
+        <!-- Encendido/Apagado -->
+        <!--
+        <receiver
+            android:name=".broadcast.ScreenControlReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        -->
+
         <!-- Inicia App -->
         <receiver
             android:name=".broadcast.BootCompletedReceiver"

@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ita.tech.eveniment.data.ApiEveniment
 import ita.tech.eveniment.interceptor.Authentication
+import ita.tech.eveniment.room.CalendarioAlarmaDatabaseDao
 import ita.tech.eveniment.room.EvenimentDatabase
 import ita.tech.eveniment.room.InformacionPantallaDatabaseDao
 import ita.tech.eveniment.util.Constants.Companion.AUTH_PASS
@@ -58,7 +59,12 @@ object AppModule {
     @Provides
     fun providesInformacionPantallaDao( evenimentDatabase: EvenimentDatabase ): InformacionPantallaDatabaseDao{
         return evenimentDatabase.informacionPantallaDao()
+    }
 
+    @Singleton
+    @Provides
+    fun providesCalendarioAlarmaDao( evenimentDatabase: EvenimentDatabase ): CalendarioAlarmaDatabaseDao{
+        return evenimentDatabase.calendarioAlarmaDao()
     }
 
 }
