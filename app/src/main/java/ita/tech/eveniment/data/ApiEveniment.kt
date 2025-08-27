@@ -1,11 +1,13 @@
 package ita.tech.eveniment.data
 
+import ita.tech.eveniment.model.CalendarioResponse
 import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RssResponse
 import ita.tech.eveniment.util.Constants.Companion.ALTA_DISPOSITIVO
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_PANTALLA
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_RECURSOS
+import ita.tech.eveniment.util.Constants.Companion.INFORMACION_RECURSOS_CALENDARIO
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_RSS
 import retrofit2.Response
 import retrofit2.http.Field
@@ -34,6 +36,13 @@ interface ApiEveniment {
         @Field("tipo_consulta") tipoConsulta: String,
         @Field("id_lista_reproduccion") idListaReproduccion: Int
     ): Response<List<InformacionRecursoModel>>
+
+    @FormUrlEncoded
+    @POST(INFORMACION_RECURSOS_CALENDARIO)
+    suspend fun ontenerInformacionRecursosCalendario(
+        @Field("idPantalla") idPantalla: String,
+        @Field("tipo_consulta") tipoConsulta: String
+    ): Response<CalendarioResponse>
 
     @FormUrlEncoded
     @POST(INFORMACION_RSS)

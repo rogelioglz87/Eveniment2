@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,29 +28,28 @@ class EvenimentServices: Service() {
                     // Comando que inicia de nuevo la App.
                     val command = "am start -n ${packageName}/.MainActivity"
 
-                    try {
-                        // 1. Inicia un proceso de superusuario ('su') de forma interactiva
-                        val process = Runtime.getRuntime().exec("su")
+                        try {
+                            // 1. Inicia un proceso de superusuario ('su') de forma interactiva
+                            val process = Runtime.getRuntime().exec("su")
 
-                        // 2. Obtenemos un canal para escribir comandos en el proceso
-                        val os = DataOutputStream(process.outputStream)
+                            // 2. Obtenemos un canal para escribir comandos en el proceso
+                            val os = DataOutputStream(process.outputStream)
 
-                        // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
-                        os.writeBytes("$command\n")
-                        os.flush()
+                            // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
+                            os.writeBytes("$command\n")
+                            os.flush()
 
-                        // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
-                        os.writeBytes("exit\n")
-                        os.flush()
+                            // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
+                            os.writeBytes("exit\n")
+                            os.flush()
 
-                        // 5. Esperamos a que el proceso y sus comandos terminen
-                        process.waitFor()
+                            // 5. Esperamos a que el proceso y sus comandos terminen
+                            process.waitFor()
 
-                        // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
-
-                    } catch (e: IOException) {
-                        // Log.e("ROOT_COMMAND", "Excepción al ejecutar comando root", e)
-                    }
+                            // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
+                        }catch (e: IOException){
+                            e.message?.let { Log.d("ROOT_COMMAND", it) }
+                        }
                 }
 
                 // Esperamos 5 seg antes de volver a verificar

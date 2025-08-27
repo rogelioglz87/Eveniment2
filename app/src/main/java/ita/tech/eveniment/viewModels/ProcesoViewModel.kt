@@ -2,6 +2,7 @@ package ita.tech.eveniment.viewModels
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
 import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.ActivityInfo
@@ -13,15 +14,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ita.tech.eveniment.model.CalendarioAlarmaDB
 import ita.tech.eveniment.model.InformacionPantallaDB
 import ita.tech.eveniment.model.InformacionPantallaModel
+import ita.tech.eveniment.model.InformacionCalendarioModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RssEntry
+import ita.tech.eveniment.repository.CalendarioAlarmaRepository
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.repository.InformacionPantallaRepository
 import ita.tech.eveniment.state.EvenimentState
@@ -31,10 +36,15 @@ import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_DATOS
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_IMAGENES
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_VIDEOS
+import ita.tech.eveniment.util.EmiteNotificacionCalendario
+import ita.tech.eveniment.util.alarmaCalendario
+import ita.tech.eveniment.util.alarmaCalendarioCancelar
 import ita.tech.eveniment.util.formatTimeFechaEspaniol
 import ita.tech.eveniment.util.formatTimeFechaIngles
 import ita.tech.eveniment.util.formatTimeHora
+import ita.tech.eveniment.util.obtenerValorAleatorio
 import ita.tech.eveniment.util.setTimeZone
+import ita.tech.eveniment.util.stringDateToZoneDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -43,6 +53,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,17 +63,25 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Collections
 import javax.inject.Inject
 
 
 @HiltViewModel
-class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepository, private val informacionPantallaRepository: InformacionPantallaRepository) :
-    ViewModel() {
+class ProcesoViewModel @Inject constructor(
+    application: Application,
+    private val repository: EvenimentRepository,
+    private val informacionPantallaRepository: InformacionPantallaRepository,
+    private val calendarioAlarmaRepository: CalendarioAlarmaRepository
+    ) : AndroidViewModel(application) {
 
-        // Bandera para inicializar la App
-        private val _isAppInitialized = MutableStateFlow(false)
+    @SuppressLint("StaticFieldLeak")
+    private val context = getApplication<Application>().applicationContext
+
+    // Bandera para inicializar la App
+    private val _isAppInitialized = MutableStateFlow(false)
     val isAppInitialized: StateFlow<Boolean> = _isAppInitialized.asStateFlow()
 
     var stateInformacionPantalla by mutableStateOf(InformacionPantallaState())
@@ -70,8 +91,12 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         private set
 
     // Variables de Reinicio App
-    private val _eventoDeReinicio = MutableSharedFlow<Unit>()
-    val eventoDeReinicio = _eventoDeReinicio.asSharedFlow()
+    // private val _eventoDeReinicio = MutableSharedFlow<Unit>()
+    // val eventoDeReinicio = _eventoDeReinicio.asSharedFlow()
+
+    // Variables para el Calendario
+    private val calendario = MutableStateFlow<List<InformacionCalendarioModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
+    private var calendarioActivo: InformacionCalendarioModel? = null
 
     // Variables para la Lista de reproduccion PRINCIPAL
     private val _recursos_tmp = MutableStateFlow<List<InformacionRecursoModel>>(emptyList()) // Almacenara la lista de recursos mientras se descarga
@@ -104,6 +129,13 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     var fechaActualIngles by mutableStateOf("")
         private set
 
+    // Formato de fechas recibida
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+    init{
+        // Proceso que escucha la notificacion de la Alarma del Calendario
+        notificarCalendario()
+    }
 
     /**
      * Set estatus del proceso
@@ -146,7 +178,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Inicializa la app de forma asincrona
      */
-    fun initializeApplication(context: Context) {
+    fun initializeApplication() {
         viewModelScope.launch(Dispatchers.IO) { // Toda esta lógica se ejecuta en un hilo IO
             delay(2000)
             Log.d(" ProcesoViewModel", "Iniciando initializeApplication")
@@ -155,10 +187,10 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             if (creacionCarpetas) {
                 withContext(Dispatchers.Main) { setEstatusCarpetas(true) } // Actualiza UI en Main thread
 
-                obtenerIdDevices(context)
+                obtenerIdDevices()
                 obtenerIpAdress()
                 altaDispositivo(CENTRO_DEFAULT)
-                descargarInformacion(context) // Esto ya lanza su propia coroutine con IO
+                descargarInformacion() // Esto ya lanza su propia coroutine con IO
 
                 _isAppInitialized.value = true
                 Log.d("ProcesoViewModel", "Aplicación inicializada completamente.")
@@ -174,7 +206,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      * Obtiene ID unico del dispositivo.
      */
     @SuppressLint("HardwareIds")
-    fun obtenerIdDevices(context: Context) {
+    fun obtenerIdDevices() {
         stateEveniment = stateEveniment.copy(
             idDispositivo = Secure.getString(context.contentResolver, Secure.ANDROID_ID)
             // idDispositivo = "f4e1c5ef8a4cfeb4"
@@ -270,7 +302,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Descarga inicial, descarga recursos de la pantalla y de la lista de reproducción
      */
-    private suspend fun descargarInformacion(context: Context) {
+    private suspend fun descargarInformacion() {
 
         //-- API Descargamos recursos de la PANTALLA
         obtenerInformacionPantalla()
@@ -303,8 +335,21 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         // Obtenemos los recursos descargables.
         val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
 
-        //-- API Descargamos recursos de la Lista de Reproduccion (PRINCIPAL)
-        obtenerInformacionRecursos()
+        //-- 1 Obtenemos informacion del Calendario
+        if( stateInformacionPantalla.tipo_fuente_eventos == "calendario" ){
+            obtenerInformacionCalendario()
+            //-- 2 Determinar la Lista de Reproduccion a mostrar
+            this.calendarioActivo = obtenerListaReproduccion()
+            _recursos_tmp.value = this.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+        }
+        else{
+            // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
+            borrarAlarmasCalendario()
+            calendarioAlarmaRepository.delete()
+
+            //-- API Descargamos recursos de la Lista de Reproduccion (PRINCIPAL)
+            obtenerInformacionRecursos()
+        }
 
         // Obtenemos los recursos descargables.
         val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -316,17 +361,17 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         }
 
         // Descargamos los recursos de pantalla
-        descargarArchivosPantalla(recursosPantalla, context)
+        descargarArchivosPantalla(recursosPantalla)
 
         // Descargamos los recursos de la lista de reproduccion (PRINCIPAL)
-        descargarArchivos(recursosDescargables, context)
+        descargarArchivos(recursosDescargables)
         if(recursosDescargables.isEmpty()){
             // Cambiamos la URL por el PATH Local
             sustituyeUrlPorPathLocal()
         }
 
         // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
-        descargarArchivos(recursosDescargablesPlantilla, context)
+        descargarArchivos(recursosDescargablesPlantilla)
         if( recursosDescargablesPlantilla.isEmpty() ){
             // Cambiamos la URL por el PATH Local
             sustituyeUrlPorPathLocalPlantilla()
@@ -363,9 +408,20 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         val archivosVideos: List<String> = listarArchivosDeCarpeta(FOLDER_EVENIMENT_VIDEOS)
         var bandBorrar: Boolean
 
-        if( _recursos.value.isNotEmpty() ){
-            listaRecursos = _recursos.value.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
+        if( stateInformacionPantalla.tipo_fuente_eventos == "calendario" ){
+            val calendarioListas = mutableListOf<InformacionRecursoModel>()
+            calendario.value.forEach { evento ->
+                val listaRecursosTmp = evento.eventos.values.toList()
+                calendarioListas += listaRecursosTmp.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
+            }
+            listaRecursos = calendarioListas
         }
+        else{
+            if( _recursos.value.isNotEmpty() ){
+                listaRecursos = _recursos.value.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
+            }
+        }
+
 
         // Lista de reproduccion de Plantilla
         if( _recursos_plantilla.value.isNotEmpty() ){
@@ -463,7 +519,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         return path.listFiles()?.map { it.name } ?: emptyList()
     }
 
-    fun descargarInformacionPantalla(context: Context){
+    fun descargarInformacionPantalla(){
         viewModelScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
 
@@ -487,10 +543,10 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
 
             // Descargamos los recursos de pantalla
-            descargarArchivosPantalla(recursosPantalla, context)
+            descargarArchivosPantalla(recursosPantalla)
 
             // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
-            descargarArchivos(recursosDescargablesPlantilla, context)
+            descargarArchivos(recursosDescargablesPlantilla)
             if( recursosDescargablesPlantilla.isEmpty() ){
                 // Cambiamos la URL por el PATH Local
                 sustituyeUrlPorPathLocalPlantilla()
@@ -530,8 +586,8 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Descarga solo los recursos de la lista de reproducción.
      */
-    fun descargarInformacionListaReproduccion(context: Context){
-
+    fun descargarInformacionListaReproduccion(){
+        val self = this
         viewModelScope.launch (Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
 
@@ -543,8 +599,21 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             // Obtenemos los recursos descargables.
             val recursosDescargablesPlantilla: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_plantilla_tmp)
 
-            //-- API Descargamos recursos de la LISTA DE REPRODUCCION
-            obtenerInformacionRecursos()
+            //-- 1 Obtenemos informacion del Calendario
+            if( stateInformacionPantalla.tipo_fuente_eventos == "calendario" ){
+                obtenerInformacionCalendario()
+                //-- 2 Determinar la Lista de Reproduccion a mostrar
+                self.calendarioActivo = obtenerListaReproduccion()
+                _recursos_tmp.value = self.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+            }
+            else{
+                // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
+                borrarAlarmasCalendario()
+                calendarioAlarmaRepository.delete()
+
+                //-- API Descargamos recursos de la LISTA DE REPRODUCCION
+                obtenerInformacionRecursos()
+            }
 
             // Obtenemos los recursos descargables.
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -555,14 +624,14 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             }
 
             // Descargamos los recursos
-            descargarArchivos(recursosDescargables, context)
+            descargarArchivos(recursosDescargables)
             if(recursosDescargables.isEmpty()){
                 // Cambiamos la URL por el PATH Local
                 sustituyeUrlPorPathLocal()
             }
 
             // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
-            descargarArchivos(recursosDescargablesPlantilla, context)
+            descargarArchivos(recursosDescargablesPlantilla)
             if( recursosDescargablesPlantilla.isEmpty() ){
                 // Cambiamos la URL por el PATH Local
                 sustituyeUrlPorPathLocalPlantilla()
@@ -585,6 +654,53 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             }
         }
     }
+
+    /**
+     * Actualiza la lista de reproduccion en funcion al Calendario programado
+     */
+    private suspend fun actualizarListaReproduccion(){
+        // Obtenemos la Lista de reproduccion en Turno del Calendario
+        val listaEnTurno = obtenerListaReproduccionTurno()
+
+        if( listaEnTurno != null ){
+            val idProgramacionAnterior = calendarioActivo?.idProgramacion
+
+            if( idProgramacionAnterior != listaEnTurno.idProgramacion ){
+                // Mostramos etiqueta de descarga
+                withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+
+                calendarioActivo = listaEnTurno
+                _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
+
+                // Obtenemos los recursos descargables.
+                val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
+
+                // Almacenamos el Total de recursos a descargar más los recursos de pantalla
+                withContext(Dispatchers.Main) {
+                    stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size)
+                }
+
+                // Descargamos los recursos
+                descargarArchivos(recursosDescargables)
+                if(recursosDescargables.isEmpty()){
+                    // Cambiamos la URL por el PATH Local
+                    sustituyeUrlPorPathLocal()
+                }
+
+                // Indicamos el momento en que se inicia la descarga
+                withContext(Dispatchers.Main) {
+                    if (stateEveniment.totalRecursos > 0) {
+                        stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
+                    } else {
+                        // Quitamos etiqueta de Descarga
+                        stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                        resetCarrucel()
+                    }
+                }
+            }
+        }
+    }
+
 
     private suspend fun obtenerInformacionPantalla() {
         var result: InformacionPantallaModel? = null
@@ -686,6 +802,37 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
      */
     fun clearListaIdRecursos(){
         _recursosId.clear()
+    }
+
+    private suspend fun obtenerInformacionCalendario(){
+        var result: List<InformacionCalendarioModel>? = null
+
+        try {
+            result = repository.obtenerInformacionRecursosCalendario(
+                stateEveniment.idDispositivo,
+                stateInformacionPantalla.tipo_fuente_eventos
+            )
+
+            calendario.value = result ?: emptyList()
+
+            informacionPantallaRepository.clear("informacionCalendario")
+            informacionPantallaRepository.insert(
+                InformacionPantallaDB(
+                    concepto = "informacionCalendario",
+                    valor = gson.toJson(calendario.value)
+                )
+            )
+        }catch (e: Exception){
+            // En caso de algun error buscamos informacion de forma Local.
+            val informacionLocal = informacionPantallaRepository.getInformacion("informacionCalendario").firstOrNull()
+            if( informacionLocal != null ){
+                val calendarioLocal = object : TypeToken<List<InformacionCalendarioModel>>(){}.type
+                calendario.value = gson.fromJson(informacionLocal.valor, calendarioLocal)
+            }else{
+                calendario.value = emptyList()
+            }
+        }
+
     }
 
     /**
@@ -807,7 +954,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Descarga los recursos en funcion a una lista de recursos.
      */
-    private fun descargarArchivos(listaRecursos: List<InformacionRecursoModel>, context: Context){
+    private fun descargarArchivos(listaRecursos: List<InformacionRecursoModel>){
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach{ recurso ->
                 val carpeta: String = if (recurso.tipo_slide=="imagen") "Imagenes" else "Videos"
@@ -815,7 +962,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
                 val recursoNombre: String = obtenerNombreUrl( recursoDatos )
 
                 // Descarga de recursos
-                _recursosId.add( descargar(context, recursoNombre, recursoDatos, carpeta ) )
+                _recursosId.add( descargar( recursoNombre, recursoDatos, carpeta ) )
             }
         }
         // else{
@@ -824,11 +971,11 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
         // }
     }
 
-    private fun descargarArchivosPantalla(listaRecursos: List<String>, context: Context){
+    private fun descargarArchivosPantalla(listaRecursos: List<String>){
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach { recurso ->
                 val recursoNombre: String = obtenerNombreUrl( recurso )
-                _recursosId.add( descargar(context, recursoNombre, recurso, "Datos" ) )
+                _recursosId.add( descargar( recursoNombre, recurso, "Datos" ) )
             }
         }
         else{
@@ -840,7 +987,7 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     /**
      * Realiza la descarga de un archivo.
      */
-    private fun descargar(context: Context, recursoName: String, recursoUri: String, recursoCarpeta: String): Long{
+    private fun descargar(recursoName: String, recursoUri: String, recursoCarpeta: String): Long{
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val request = DownloadManager.Request(Uri.parse(recursoUri))
             .setTitle("Descargando archivos...")
@@ -848,6 +995,122 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOCUMENTS, "/Eveniment/$recursoCarpeta/$recursoName")
         return downloadManager.enqueue(request)
+    }
+
+    /**
+     * Obtiene la Lista de Reproduccion en turno del Calendario
+     */
+    private suspend fun obtenerListaReproduccion(): InformacionCalendarioModel? {
+        var calendarioEvento: InformacionCalendarioModel? = null
+        val timeZone = stateInformacionPantalla.time_zone
+        val fechaActual = setTimeZone( System.currentTimeMillis(), timeZone )
+        val fechaSiguiente = fechaActual.plusDays(2)
+
+        // Borrar Alarmas del Calendario
+        borrarAlarmasCalendario()
+        calendarioAlarmaRepository.delete()
+
+        // Recorremos el calendario
+        calendario.value.forEach { evento ->
+            val fechas = evento.fechas.values.toList()
+            if( fechas.isNotEmpty() ){
+
+                // Validamos las Fechas
+                fechas.forEachIndexed { index, fecha ->
+                    val fecha_ini = stringDateToZoneDateTime(fecha.ini, this.formatter, timeZone)
+                    val fecha_fin = stringDateToZoneDateTime(fecha.fin, this.formatter, timeZone)
+
+                    val valorAleatorio = obtenerValorAleatorio(100,999);
+                    val indexIni = "$index${valorAleatorio}".toInt()
+                    val indexfin = "$index${valorAleatorio+1}".toInt()
+
+                    if( (fechaActual.isEqual(fecha_ini) || fechaActual.isAfter(fecha_ini)) &&
+                        fechaActual.isBefore(fecha_fin) ){
+
+                        // Validamos prioridad
+                        if (calendarioEvento != null) {
+                            if( evento.prioridad_horario >= calendarioEvento!!.prioridad_horario ){
+                                calendarioEvento = evento
+                            }
+                        }else{
+                            calendarioEvento = evento
+                        }
+                    }
+
+                    // Creamos Alarmas para la validacion de la siguiente Lista de Reproducción
+                    if (fecha_ini != null && fecha_fin != null) {
+                        // Fecha Inicio
+                        if( fecha_ini.isAfter(fechaActual) && fecha_ini.isBefore(fechaSiguiente) ){
+                            alarmaCalendario( context, fecha_ini, indexIni )                                // Creamos Alerta
+                            calendarioAlarmaRepository.insert( CalendarioAlarmaDB( alarmaId = indexIni ) ) // Guardamos ID de Alarma
+
+                        }
+                        // Fecha Fin
+                        if( fecha_fin.isAfter(fechaActual) && fecha_fin.isBefore(fechaSiguiente) ){
+                            alarmaCalendario( context, fecha_fin, indexfin )                                // Creamos Alerta
+                            calendarioAlarmaRepository.insert( CalendarioAlarmaDB( alarmaId = indexfin ) ) // Guardamos ID de Alarma
+                        }
+                    }
+                }
+            }
+        }
+        return if (calendarioEvento != null) {
+            calendarioEvento
+        }else{
+            null
+        }
+    }
+
+    /**
+     * Valida si es necesario cambiar la Lista de Reproducción de un Calendario
+     */
+    private fun obtenerListaReproduccionTurno(): InformacionCalendarioModel? {
+        var calendarioEvento: InformacionCalendarioModel? = null
+        val timeZone = stateInformacionPantalla.time_zone
+        val fechaActual = setTimeZone( System.currentTimeMillis(), timeZone )
+
+        // Recorremos el calendario
+        calendario.value.forEach { evento ->
+            val fechas = evento.fechas.values.toList()
+            if( fechas.isNotEmpty() ){
+                // Validamos las Fechas
+                fechas.forEach { fecha ->
+                    val fecha_ini = stringDateToZoneDateTime(fecha.ini, this.formatter, timeZone)
+                    val fecha_fin = stringDateToZoneDateTime(fecha.fin, this.formatter, timeZone)
+
+                    if( (fechaActual.isEqual(fecha_ini) || fechaActual.isAfter(fecha_ini)) &&
+                        fechaActual.isBefore(fecha_fin) ){
+
+                        // Validamos prioridad
+                        if (calendarioEvento != null) {
+                            if( evento.prioridad_horario >= calendarioEvento!!.prioridad_horario ){
+                                calendarioEvento = evento
+                            }
+                        }else{
+                            calendarioEvento = evento
+                        }
+                    }
+                }
+
+            }
+        }
+        return if (calendarioEvento != null) {
+            calendarioEvento
+        }else{
+            null
+        }
+    }
+
+    /**
+     * Borra las alarmas programadas para el Calendario
+     */
+    private suspend fun borrarAlarmasCalendario(){
+        val listaAlarmas = calendarioAlarmaRepository.getInformacion().first()
+        if( listaAlarmas.isNotEmpty() ){
+            listaAlarmas.forEach { alarma ->
+                alarmaCalendarioCancelar(context, alarma.alarmaId)
+            }
+        }
     }
 
     /**
@@ -1060,9 +1323,25 @@ class ProcesoViewModel @Inject constructor(private val repository: EvenimentRepo
     }
 
     fun solicitaReinicioApp(){
+        /*
         viewModelScope.launch {
             // Emite un evento que se ejecuta en el Composable 'HomeView' dentro del LaunchedEffect
             _eventoDeReinicio.emit(Unit)
+        }
+        */
+    }
+
+    /**
+     * Valida el calendario en caso de una notificacion de Alarma
+     */
+    private fun notificarCalendario(){
+        viewModelScope.launch(Dispatchers.IO) {
+            EmiteNotificacionCalendario.notificacion.collect{
+                // Validamos que el tipo de fuente sea Calendario
+                if( stateInformacionPantalla.tipo_fuente_eventos == "calendario" ) {
+                    actualizarListaReproduccion()
+                }
+            }
         }
     }
 

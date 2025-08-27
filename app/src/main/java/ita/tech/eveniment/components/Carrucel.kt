@@ -70,7 +70,6 @@ fun Carrucel(
             onTipoSlideChange( recursos[paginaActual].tipo_slide )
 
             //-- Obtiene la duracion de la primera diapositiva
-            println("***----Duracion diapositiva actual: ${recursos[paginaActual].duracion}")
             carrucelVM.setDuracionRecursoActual(recursos[paginaActual].duracion.toLong())
 
             //-- Activa el carrucel

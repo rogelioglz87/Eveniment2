@@ -39,6 +39,7 @@ import ita.tech.eveniment.navegation.NavManager
 import ita.tech.eveniment.services.EvenimentServices
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
+import ita.tech.eveniment.util.AlarmaEncendidoApagado
 import ita.tech.eveniment.util.alarmaDeReinicio
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
 import ita.tech.eveniment.viewModels.ProcesoViewModel
@@ -71,6 +72,11 @@ class MainActivity : ComponentActivity() {
         // -- Inicia el Monitoreo de la App
         val serviceIntent = Intent(this, EvenimentServices::class.java)
         startService(serviceIntent)
+
+        //-- Inicia Alarmas de Encendido/Apagado (Aun no funciona el ENCENDIDO)
+        //-- Checar comando: input keyevent 223
+        //-- Lista de comandos: https://gist.github.com/arjunv/2bbcca9a1a1c127749f8dcb6d36fb0bc
+        // AlarmaEncendidoApagado.scheduleDailyAlarms(this)
 
         enableEdgeToEdge()
         setContent {

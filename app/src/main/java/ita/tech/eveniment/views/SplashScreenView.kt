@@ -41,7 +41,7 @@ fun ContentSplashScreenView(navController: NavController, procesoVM: ProcesoView
             navController.navigate("Home") { popUpTo(0) }
         } else {
             // Llama a la función de inicialización del ViewModel
-            procesoVM.initializeApplication(context)
+            procesoVM.initializeApplication()
         }
     }
 

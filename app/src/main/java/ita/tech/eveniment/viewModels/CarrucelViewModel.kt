@@ -63,7 +63,6 @@ class CarrucelViewModel: ViewModel() {
                     detener()
                     onDuracionFinalizada()
                 }
-                println("***--Duracion SEG: ${tiempoTranscurrido}")
                 tiempoTranscurrido += 1000
             }
         }
@@ -109,7 +108,6 @@ class CarrucelViewModel: ViewModel() {
      */
     private fun actualizarListaFiltrada() {
         val fechaActual =  setTimeZone( System.currentTimeMillis(), this.timeZone )
-        println("*** Filtrar lista de recursos: $fechaActual")
 
         val nuevaLista = _listaOriginal.value.filter { recurso ->
             try {
