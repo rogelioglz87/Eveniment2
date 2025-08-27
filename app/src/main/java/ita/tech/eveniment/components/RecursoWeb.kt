@@ -60,7 +60,20 @@ fun RecursoWeb(url: String) {
             if (webView.url != url) {
                 webView.loadUrl(url)
             }
-        }
+        },
+        /*
+        onRelease = { webView ->
+
+            webView.stopLoading()
+            webView.loadUrl("about:blank") // Limpia la página actual
+            webView.clearHistory()
+            webView.clearCache(true)
+
+            // Es crucial remover la vista de su padre antes de destruirla
+            (webView.parent as? ViewGroup)?.removeView(webView)
+
+            webView.destroy()
+        }*/
     )
 
     DisposableEffect(Unit) {
