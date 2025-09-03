@@ -519,6 +519,9 @@ class ProcesoViewModel @Inject constructor(
         return path.listFiles()?.map { it.name } ?: emptyList()
     }
 
+    /**
+     * Descarga toda la informacion de la Pantalla (Logo, nombre, colores, etc...)
+     */
     fun descargarInformacionPantalla(){
         viewModelScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
@@ -584,12 +587,24 @@ class ProcesoViewModel @Inject constructor(
     }
 
     /**
+     * Descarga toda la informacion de la Pantalla (Solo texto)
+     * El objetivo principal es actualizar la fuente de informacion del dispositivo (Lista o Calendario)
+     */
+    private  suspend fun descargarInformacionPantallaLite(){
+        //-- API Descargamos recursos de la PANTALLA
+        obtenerInformacionPantalla()
+    }
+
+    /**
      * Descarga solo los recursos de la lista de reproducción.
      */
     fun descargarInformacionListaReproduccion(){
         val self = this
         viewModelScope.launch (Dispatchers.IO) {
             withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+
+            // Actualizamos la informacion del dispositivo
+            descargarInformacionPantallaLite()
 
             //-- API Descargamos recursos de la Lista de Reproduccion (PLANTILLA)
             if( stateInformacionPantalla.id_lista_reproduccion > 0 ){
