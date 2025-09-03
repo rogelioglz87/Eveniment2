@@ -29,7 +29,7 @@ class Constants {
         // Estilo de la Fuente (General)
         // Plantilla 1
         const val P1_SIZE_TITULO = 26
-        const val P1_SIZE_FECHA = 16
+        const val P1_SIZE_FECHA = 15
 
         // Plantilla 2
         const val P2_SIZE_FECHA = 14
