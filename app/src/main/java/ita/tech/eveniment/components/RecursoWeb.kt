@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.DisposableEffect
@@ -48,6 +49,10 @@ fun RecursoWeb(url: String) {
                 settings.loadWithOverviewMode = true
                 settings.javaScriptCanOpenWindowsAutomatically = true
                 settings.mediaPlaybackRequiresUserGesture = false
+
+
+                // La línea clave que define la estrategia de caché
+                settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
 
                 // WebView settings
                 fitsSystemWindows = true
