@@ -132,7 +132,7 @@ fun Carrucel(
                     RecursoImagen(rutaImagen = recurso, context = context)
                 }
                 else if (recursos[page].tipo_slide == "video") {
-                    RecursoVideo(recurso, isCurrentlyVisible = (pagerState.currentPage == page) )
+                    RecursoVideo(recurso, isCurrentlyVisible = (pagerState.currentPage == page), recursos.size )
                 }
                 else if (recursos[page].tipo_slide == "cctv") {
                     RecursoCCTV(path = recurso)
