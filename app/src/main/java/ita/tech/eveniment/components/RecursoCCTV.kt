@@ -352,8 +352,12 @@ fun crearExoplayer(context: Context, path: String, parentScope: CoroutineScope):
     val renderersFactory =
         DefaultRenderersFactory(context).forceEnableMediaCodecAsynchronousQueueing()
 
-    val mediaSource: MediaSource =
-        RtspMediaSource.Factory().setForceUseRtpTcp(true).createMediaSource(MediaItem.fromUri(path))
+    // val mediaSource: MediaSource = RtspMediaSource.Factory().setForceUseRtpTcp(true).createMediaSource(MediaItem.fromUri(path))
+    val mediaSource: MediaSource = RtspMediaSource.Factory().createMediaSource(MediaItem.fromUri(path))
+
+    val mediaItem = MediaItem.Builder()
+        .setUri(path)
+        .build()
 
     val loadControl = DefaultLoadControl.Builder()
         .setBufferDurationsMs(

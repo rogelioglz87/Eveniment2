@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -24,7 +25,7 @@ import ita.tech.eveniment.viewModels.RecursoVideoModel
 
 @OptIn(UnstableApi::class)
 @Composable
-fun RecursoVideo(path: String, isCurrentlyVisible: Boolean) {
+fun RecursoVideo(path: String, isCurrentlyVisible: Boolean, totalRecursos: Int = 0) {
 
     val context = LocalContext.current
 
@@ -51,6 +52,9 @@ fun RecursoVideo(path: String, isCurrentlyVisible: Boolean) {
         {
             exoPlayer.setMediaItem(MediaItem.fromUri(Uri.parse(path)))
             exoPlayer.prepare()
+            if(totalRecursos == 1) {
+                exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
+            }
             exoPlayer.playWhenReady = true
             exoPlayer.play()
         }
