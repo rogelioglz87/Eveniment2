@@ -35,8 +35,12 @@ class Constants {
         const val P2_SIZE_FECHA = 14
         const val P2_SIZE_TITULO = 18
 
+        // Plantilla 14
+        const val P14_SIZE_FECHA = 17
+
         // HOST PARA VALIDAR QUE LA APP CUENTA CON INTERNET
-        const val HOST_INTERNET = "secure.itatechapps.com"
+        // const val HOST_INTERNET = "secure.itatechapps.com"
+        const val HOST_INTERNET = "google.com"
 
     }
 

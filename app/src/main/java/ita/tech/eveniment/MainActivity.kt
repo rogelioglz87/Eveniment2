@@ -39,7 +39,6 @@ import ita.tech.eveniment.navegation.NavManager
 import ita.tech.eveniment.services.EvenimentServices
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
-import ita.tech.eveniment.util.AlarmaEncendidoApagado
 import ita.tech.eveniment.util.alarmaDeReinicio
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
 import ita.tech.eveniment.viewModels.ProcesoViewModel
@@ -61,6 +60,8 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // val context = this
 
         // -- Activamos alarma de reinicio para la App
         alarmaDeReinicio(this)

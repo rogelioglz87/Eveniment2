@@ -15,12 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,8 +26,8 @@ import coil3.imageLoader
 import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
-import ita.tech.eveniment.util.EmiteNotificacionCalendario
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Catorce
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Doce
@@ -39,7 +37,6 @@ import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Once
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Trece
-import kotlinx.coroutines.launch
 
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -49,7 +46,7 @@ fun HomeView(
     navController: NavController
 ) {
 
-    val context = LocalContext.current
+    // val context = LocalContext.current
 
     val stateEveniment = procesoVM.stateEveniment
     val stateInformacionPantalla = procesoVM.stateInformacionPantalla
@@ -66,8 +63,6 @@ fun HomeView(
     //-- Contador de coneciones a internet
     var contadorInternet by remember { mutableIntStateOf(0) }
     var reiniciarAppBand by remember { mutableStateOf(false) } // Indica si se reiniciara la app
-
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(stateEveniment.estatusInternet) {
         if( stateEveniment.estatusInternet )
@@ -189,6 +184,10 @@ fun HomeView(
 
                 "13" -> {
                     Plantilla_Horizontal_Trece(recursos, procesoVM, recursosPlantilla)
+                }
+
+                "14" -> {
+                    Plantilla_Horizontal_Catorce(recursos, procesoVM)
                 }
 
                 else -> {
