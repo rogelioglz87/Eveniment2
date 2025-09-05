@@ -328,7 +328,8 @@ class ProcesoViewModel @Inject constructor(
         }
 
         //-- API RSS
-        if(stateInformacionPantalla.tipo_disenio == "13"){
+        if(stateInformacionPantalla.tipo_disenio == "13" ||
+            stateInformacionPantalla.tipo_disenio == "14"){
             obtenerInformacionRss()
         }
 
@@ -530,7 +531,8 @@ class ProcesoViewModel @Inject constructor(
             obtenerInformacionPantalla()
 
             //-- API Rss
-            if(stateInformacionPantalla.tipo_disenio == "13"){
+            if(stateInformacionPantalla.tipo_disenio == "13" ||
+                stateInformacionPantalla.tipo_disenio == "14"){
                 obtenerInformacionRss()
             }
 

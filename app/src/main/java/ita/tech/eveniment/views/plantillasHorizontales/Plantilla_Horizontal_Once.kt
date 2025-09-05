@@ -1,6 +1,5 @@
 package ita.tech.eveniment.views.plantillasHorizontales
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -21,10 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.constraintlayout.compose.ConstraintLayout
 import ita.tech.eveniment.components.Carrucel
-import ita.tech.eveniment.components.RecursoCCTV
-import ita.tech.eveniment.components.RecursoImagen
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 
 @Composable
