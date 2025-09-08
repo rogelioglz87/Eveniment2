@@ -7,6 +7,7 @@ data class InformacionPantallaModel(
     val nombreArchivo: String,
     val tipo_disenio: String,
     val id_lista_reproduccion: Int,
+    val url_pagina_web: String,
     val duracion_slide: String,
     val logo: String,
     val logo_app: String,
