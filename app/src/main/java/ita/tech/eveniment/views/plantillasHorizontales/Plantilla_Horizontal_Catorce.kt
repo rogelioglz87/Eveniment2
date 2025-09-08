@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,6 +30,7 @@ import ita.tech.eveniment.components.PHBarraLateralUno
 import ita.tech.eveniment.components.RecursoWeb
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.delay
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
@@ -34,7 +40,16 @@ fun Plantilla_Horizontal_Catorce(
 ) {
     val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
     val timeZone = procesoVM.stateInformacionPantalla.time_zone
+    var recargarPaginaWeb by remember {
+        mutableStateOf(false)
+    }
 
+    // Recarga el componente d ela pagina web
+    LaunchedEffect(procesoVM.stateInformacionPantalla.url_pagina_web) {
+        recargarPaginaWeb = true
+        delay(1000)
+        recargarPaginaWeb = false
+    }
 
     Row(
         modifier = Modifier
@@ -61,7 +76,16 @@ fun Plantilla_Horizontal_Catorce(
                     .fillMaxHeight()
                     .background(Color.White)
             ) {
-                RecursoWeb(url = "https://campana-ventas.hircasa.com.mx/")
+                if(!recargarPaginaWeb){
+                    RecursoWeb(url = procesoVM.stateInformacionPantalla.url_pagina_web)
+                }
+                else{
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(color = Color.Black)
+                    ) { }
+                }
             }
 
         }

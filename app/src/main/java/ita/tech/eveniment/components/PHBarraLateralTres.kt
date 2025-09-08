@@ -95,7 +95,7 @@ fun PHBarraLateralTres(procesoVM: ProcesoViewModel){
                 .padding(end = 10.dp, bottom = 10.dp)
         ) {
             Text(
-                text = "www.ita.tech",
+                text = "ita.tech",
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,

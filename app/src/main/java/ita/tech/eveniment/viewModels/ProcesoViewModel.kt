@@ -753,6 +753,7 @@ class ProcesoViewModel @Inject constructor(
                 nombreArchivo = result?.nombreArchivo ?: "",
                 tipo_disenio = result?.tipo_disenio ?: "",
                 id_lista_reproduccion = result?.id_lista_reproduccion ?: 0,
+                url_pagina_web = result?.url_pagina_web ?: "",
                 duracion_slide = result?.duracion_slide ?: "",
                 logo = result?.logo ?: "",
                 logo_app = result?.logo_app ?: "",

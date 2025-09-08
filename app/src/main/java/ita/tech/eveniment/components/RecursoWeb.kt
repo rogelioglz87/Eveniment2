@@ -83,6 +83,7 @@ fun RecursoWeb(url: String) {
 
     DisposableEffect(Unit) {
         onDispose {
+            println("***Limpiar pagina web")
             webViewInstance?.apply {
                 loadUrl("about:blank")
                 stopLoading()
