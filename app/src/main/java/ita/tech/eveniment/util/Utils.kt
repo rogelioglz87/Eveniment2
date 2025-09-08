@@ -12,6 +12,9 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 
 private val random = Random
+private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
+private val formatoFechaEspaniol = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES"))
+private val formatoFechaIngles = DateTimeFormatter.ofPattern("EEEE, dd MMMM", Locale.ENGLISH)
 
 /**
  * Obtiene un numero aleatorio de un rango dado
@@ -28,17 +31,15 @@ fun setTimeZone( timer: Long, time_zone: String ): ZonedDateTime {
 }
 
 fun formatTimeHora(time: ZonedDateTime?): String{
-    val formato = DateTimeFormatter.ofPattern("HH:mm");
     return if (time != null) {
-        time.format(formato)
+        time.format(formatoHora)
     }else{
         ""
     }
 }
 
 fun formatTimeFechaEspaniol(time: ZonedDateTime?): String{
-    val formato = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES"));
-    return time?.format(formato)?.split(" ")?.mapIndexed { index, palabra ->
+    return time?.format(formatoFechaEspaniol)?.split(" ")?.mapIndexed { index, palabra ->
         when (palabra) {
             "de" -> palabra // Mantener "de" en minúscula
             else -> palabra.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() } // Capitalizar otras palabras
@@ -47,9 +48,8 @@ fun formatTimeFechaEspaniol(time: ZonedDateTime?): String{
 }
 
 fun formatTimeFechaIngles(time: ZonedDateTime?): String{
-    val formato = DateTimeFormatter.ofPattern("EEEE, dd MMMM", Locale.ENGLISH);
     return if (time != null) {
-        time.format(formato)
+        time.format(formatoFechaIngles)
     }else{
         ""
     }
