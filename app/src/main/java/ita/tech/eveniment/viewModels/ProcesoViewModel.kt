@@ -63,6 +63,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Collections
@@ -124,6 +125,10 @@ class ProcesoViewModel @Inject constructor(
     private var cronJobTimer by mutableStateOf<Job?>(null)
     var horaActual by mutableStateOf("")
         private set
+
+    private var fechaActualGeneral: String? = null
+    private var fechaActualGeneralBand: Boolean = false
+
     var fechaActualEspaniol by mutableStateOf("")
         private set
     var fechaActualIngles by mutableStateOf("")
@@ -1224,12 +1229,21 @@ class ProcesoViewModel @Inject constructor(
         cronJobTimer?.cancel()
         cronJobTimer = viewModelScope.launch(Dispatchers.Default) {
             while (true){
-                delay(1000)
+                delay(1000) // 1000
                 val tiempoActual = setTimeZone( System.currentTimeMillis(), stateInformacionPantalla.time_zone )
+
+                if( fechaActualGeneral == null || fechaActualGeneral != tiempoActual.toLocalDate().toString() ){
+                    fechaActualGeneral = tiempoActual.toLocalDate().toString()
+                    fechaActualGeneralBand = true
+                }
                 withContext(Dispatchers.Main) {
                     horaActual = formatTimeHora(tiempoActual)
-                    fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
-                    fechaActualIngles = formatTimeFechaIngles(tiempoActual)
+                    if(fechaActualGeneralBand){
+                        println("***Actualizar fecha")
+                        fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
+                        fechaActualIngles = formatTimeFechaIngles(tiempoActual)
+                        fechaActualGeneralBand = false
+                    }
                 }
             }
         }
