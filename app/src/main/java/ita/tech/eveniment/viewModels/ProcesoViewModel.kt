@@ -115,6 +115,10 @@ class ProcesoViewModel @Inject constructor(
 
     private val gson = Gson()
 
+    // Canal para enviar eventos de orientación a la UI
+    private val _eventoDeOrientacion = MutableSharedFlow<Int>()
+    val eventoDeOrientacion = _eventoDeOrientacion.asSharedFlow()
+
     /**
      * Almacena los IDs de los recursos a descargar
      */
@@ -315,13 +319,10 @@ class ProcesoViewModel @Inject constructor(
         // Obtenemos y convertimos los colores de la pantalla
         withContext(Dispatchers.Main) {
             convertirColoresPantalla()
-
-            // Rotamos la pantalla en caso de ser necesario
-            val contextAux = context
-            if (contextAux is Activity) {
-                contextAux.requestedOrientation = determinaOrientacionPantalla()
-            }
         }
+
+        // Rotamos la pantalla en caso de ser necesario
+        determinaOrientacionPantalla()
 
         // Obtenemos los recursos descargables de la Pantalla (logo, imagen de default, video de alerta, etc...)
         val recursosPantalla: List<String> = obtenerRecursosPantalla()
@@ -565,14 +566,12 @@ class ProcesoViewModel @Inject constructor(
             // Borramos recursos que no se ocupen
             borrarRecursos()
 
+            // Rotamos la pantalla en caso de ser necesario
+            determinaOrientacionPantalla()
+
             withContext(Dispatchers.Main) {
                 // Obtenemos y convertimos los colores de la pantalla
                 convertirColoresPantalla()
-
-                // Rotamos la pantalla en caso de ser necesario
-                if (context is Activity) {
-                    context.requestedOrientation = determinaOrientacionPantalla()
-                }
 
                 // Almacenamos el Total de recursos a descargar más los recursos de pantalla
                 stateEveniment = stateEveniment.copy(totalRecursos = recursosPantalla.size + recursosDescargablesPlantilla.size)
@@ -1253,26 +1252,14 @@ class ProcesoViewModel @Inject constructor(
         cronJobTimer?.cancel()
     }
 
-    private fun determinaOrientacionPantalla(): Int{
-        var orientacion: Int = 0
-        orientacion = when( stateInformacionPantalla.tipo_disenio ){
-            "7","8","9" -> forzarOrientacionVertical()
-            else -> forzarOrientacionHorizontal()
+    private fun determinaOrientacionPantalla(){
+        val orientacion = when( stateInformacionPantalla.tipo_disenio ){
+            "7","8","9" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
-        println("*** orientacion $orientacion")
-        return orientacion
-    }
-
-    // Para forzar la orientación vertical (retrato):
-    private fun forzarOrientacionVertical(): Int {
-        println("*** orientacion vertical")
-        return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-
-    // Para forzar la orientación horizontal (landscape):
-    private fun forzarOrientacionHorizontal(): Int {
-        println("*** orientacion horizontal")
-        return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        viewModelScope.launch {
+            _eventoDeOrientacion.emit(orientacion)
+        }
     }
 
     /**
