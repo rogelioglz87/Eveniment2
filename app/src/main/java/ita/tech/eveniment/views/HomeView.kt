@@ -46,8 +46,6 @@ fun HomeView(
     navController: NavController
 ) {
 
-    // val context = LocalContext.current
-
     val stateEveniment = procesoVM.stateEveniment
     val stateInformacionPantalla = procesoVM.stateInformacionPantalla
 

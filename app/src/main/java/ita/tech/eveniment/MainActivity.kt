@@ -1,6 +1,7 @@
 package ita.tech.eveniment
 
 import android.Manifest
+import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
@@ -106,6 +108,16 @@ class MainActivity : ComponentActivity() {
                     // Si se concedió, anclamos la pantalla
                     println("***Si se concedió, anclamos la pantalla")
                     startLockTask()
+                }
+            }
+
+            // Obtenemos una referencia a la Activity actual
+            val activity = LocalContext.current as Activity
+
+            LaunchedEffect(Unit) {
+                // Escuchamos el evento de orientacion
+                procesoVM.eventoDeOrientacion.collect{ orientacion ->
+                    activity.requestedOrientation = orientacion
                 }
             }
 
