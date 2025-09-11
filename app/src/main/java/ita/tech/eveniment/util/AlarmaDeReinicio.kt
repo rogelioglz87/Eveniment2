@@ -20,7 +20,7 @@ fun alarmaDeReinicio( context: Context ){
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    /*
+    // -- SE CONFIGURA EL REINICIO EN UNA HORA DETERMINADA
     // Configura la hora: 11:00 PM (23:00)
     val calendar = Calendar.getInstance().apply {
         timeInMillis = System.currentTimeMillis()
@@ -33,14 +33,16 @@ fun alarmaDeReinicio( context: Context ){
     if (calendar.timeInMillis <= System.currentTimeMillis()) {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
     }
-    */
 
+    // -- SE CONFIGURA EL REINICIO EN UN INTERVALO DE TIEMPO (X98Q)
+    /*
     // Colocamos una alarma para ejecutarce cada 6 hrs
     val calendar = Calendar.getInstance().apply {
         timeInMillis = System.currentTimeMillis()
         // Añade 6 horas a la hora actual para la primera ejecución
-        add(Calendar.HOUR_OF_DAY, 6)
+        add(Calendar.HOUR_OF_DAY, 4)
     }
+    */
 
     // Cancela cualquier alarma previa con el mismo PendingIntent para evitar duplicados
     alarmManager.cancel(pendingIntent)

@@ -9,20 +9,22 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 
 class DescargarReceiver(
-    private val recursos: List<Long>,
+    // private val recursos: List<Long>,
+    private val totalRecursos: Int,
     val onComplete: () -> Unit,
     val onRecursoDescargado:() -> Unit
 ): BroadcastReceiver() {
 
     private var registered: Boolean = false
-    private val totalRecursos: Int = recursos.size
+    // private val totalRecursos: Int = recursos.size
     private var recursosDescargados: Int = 1
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if( intent?.action == "android.intent.action.DOWNLOAD_COMPLETE" ){
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
 
-            if( recursos.contains(id) ){
+            // if( recursos.contains(id) ){
+            if( id != -1L ){
                 onRecursoDescargado()
                 if( totalRecursos == recursosDescargados ){
                     onComplete()

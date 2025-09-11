@@ -1,5 +1,7 @@
 package ita.tech.eveniment.components
 
+import android.app.DownloadManager
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -52,9 +54,12 @@ fun DownloadScreen(procesoVM: ProcesoViewModel){
      * Monitorea la descarga de los recursos
      */
     DisposableEffect(stateEveniment.bandInicioDescarga) {
-        println("Inicia descarga 0")
+        scope.launch(Dispatchers.IO) {
+            procesoVM.iniciarDescargaInformacion()
+        }
         val receiver = DescargarReceiver(
-            procesoVM.recursosId,
+            // procesoVM.recursosId,
+            procesoVM.stateEveniment.totalRecursos,
             onComplete = {
                 procesoVM.sustituyeUrlPorPathLocal()
                 procesoVM.sustituyeUrlPorPathLocalPlantilla()

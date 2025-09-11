@@ -29,7 +29,8 @@ fun DownloadLabel(procesoVM: ProcesoViewModel){
     DisposableEffect(stateEveniment.bandInicioDescarga) {
 
         val receiver = DescargarReceiver(
-            procesoVM.recursosId,
+            // procesoVM.recursosId,
+            procesoVM.stateEveniment.totalRecursos,
             onComplete = {
                 procesoVM.sustituyeUrlPorPathLocal()
                 procesoVM.sustituyeUrlPorPathLocalPlantilla()

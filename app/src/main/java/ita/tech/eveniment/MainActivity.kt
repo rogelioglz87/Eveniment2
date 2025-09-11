@@ -17,7 +17,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,8 +71,10 @@ class MainActivity : ComponentActivity() {
         alarmaDeReinicio(this)
 
         // -- Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
+        /*
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
+        */
 
         // -- Inicia el Monitoreo de la App
         val serviceIntent = Intent(this, EvenimentServices::class.java)
@@ -84,21 +88,41 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             // Estado para el permiso de administrador de dispositivo
-            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
+            // var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
 
             /**
              * Permisos para la lectura de archivos Locales
              */
             var permission by remember {
-                mutableStateOf(ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED )
+                mutableStateOf(
+                    ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                            ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                )
             }
-
+/*
             val permissionLaucher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission(),
                 onResult = { isGranted -> permission = isGranted }
             )
+*/
+            val permissionLaucher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestMultiplePermissions(),
+                onResult = { permissionsMap ->
+                    permission = permissionsMap.values.all { it }
+                }
+            )
+/*
+            var permissionWrite by remember {
+                mutableStateOf(ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED )
+            }
 
+            val permissionLaucherWrite = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = { isGranted -> permissionWrite = isGranted }
+            )
+*/
             // Launcher para el permiso de administrador de dispositivo
+            /*
             val deviceAdminLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
@@ -110,6 +134,7 @@ class MainActivity : ComponentActivity() {
                     startLockTask()
                 }
             }
+            */
 
             // Obtenemos una referencia a la Activity actual
             val activity = LocalContext.current as Activity
@@ -123,6 +148,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(key1 = true) {
                 // Permiso: Administrador
+                /*
                 if (!isAdminActive) {
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                         putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
@@ -130,11 +156,22 @@ class MainActivity : ComponentActivity() {
                     }
                     deviceAdminLauncher.launch(intent)
                 }
+                */
 
                 // Permiso: Almacenamiento
                 if( !permission ){
-                    permissionLaucher.launch( Manifest.permission.READ_EXTERNAL_STORAGE )
+                    // permissionLaucher.launch( Manifest.permission.READ_EXTERNAL_STORAGE )
+                    permissionLaucher.launch(
+                        arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        )
+                    )
                 }
+
+                // if( !permissionWrite ){
+                    // permissionLaucherWrite.launch( Manifest.permission.WRITE_EXTERNAL_STORAGE )
+                // }
 
                 launch(Dispatchers.IO) {
                     // Validamos estatus de red
@@ -192,12 +229,26 @@ class MainActivity : ComponentActivity() {
             }
 
             EvenimentTheme {
-                if (isAdminActive && permission) {
+                // if (isAdminActive && permission) {
+                if (permission) {
                     NavManager(procesoVM)
                 }else {
                     // Muestra una pantalla de espera o de explicación si no hay permisos
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Esperando permisos para continuar...")
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Esperando permisos para continuar...")
+                            Button(onClick = {
+                                // 4. Lanzamos la solicitud con un ARRAY de los permisos.
+                                permissionLaucher.launch(
+                                    arrayOf(
+                                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                    )
+                                )
+                            }) {
+                                Text("Conceder Permisos")
+                            }
+                        }
                     }
                 }
             }

@@ -92,7 +92,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Modo Kiosko -->
+        <!-- Modo Kiosko
         <receiver
             android:name=".broadcast.MyDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
@@ -105,6 +105,8 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+        -->
+
     </application>
 
 </manifest>
