@@ -29,6 +29,7 @@ import ita.tech.eveniment.model.RssEntry
 import ita.tech.eveniment.repository.CalendarioAlarmaRepository
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.repository.InformacionPantallaRepository
+import ita.tech.eveniment.state.DescargaRecursosState
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
 import ita.tech.eveniment.util.Constants.Companion.CENTRO_DEFAULT
@@ -89,6 +90,9 @@ class ProcesoViewModel @Inject constructor(
         private set
 
     var stateEveniment by mutableStateOf(EvenimentState())
+        private set
+
+    var stateDescargaRecursos by mutableStateOf(DescargaRecursosState())
         private set
 
     // Variables de Reinicio App
@@ -234,10 +238,9 @@ class ProcesoViewModel @Inject constructor(
         val folderVideos = File(FOLDER_EVENIMENT_VIDEOS)
         val folderImagenes = File(FOLDER_EVENIMENT_IMAGENES)
         var band: Boolean = false;
-
         try{
             if( !folderEveniment.exists() ){
-                folderEveniment.mkdir()
+                folderEveniment.mkdirs()
             }
             if ( !folderDatos.exists() ){
                 folderDatos.mkdirs()
@@ -368,19 +371,27 @@ class ProcesoViewModel @Inject constructor(
         }
 
         // Descargamos los recursos de pantalla
-        descargarArchivosPantalla(recursosPantalla)
+        // descargarArchivosPantalla(recursosPantalla)
+        stateDescargaRecursos = stateDescargaRecursos.copy(
+            recursosPantalla = recursosPantalla,
+            recursosPrincipal = recursosDescargables,
+            recursosPlantilla = recursosDescargablesPlantilla
+        )
 
         // Descargamos los recursos de la lista de reproduccion (PRINCIPAL)
-        descargarArchivos(recursosDescargables)
-        if(recursosDescargables.isEmpty()){
-            // Cambiamos la URL por el PATH Local
-            sustituyeUrlPorPathLocal()
-        }
+        // descargarArchivos(recursosDescargables)
 
         // Descargamos los recursos de la lista de reproduccion (PLANTILLA)
-        descargarArchivos(recursosDescargablesPlantilla)
+        // descargarArchivos(recursosDescargablesPlantilla)
+
+        // Sustituimos la URL por el PATH Local en caso de no tener archivos de descarga
+        if(recursosPantalla.isEmpty()){
+            sustituyeUrlPorPathLocalPantalla()
+        }
+        if(recursosDescargables.isEmpty()){
+            sustituyeUrlPorPathLocal()
+        }
         if( recursosDescargablesPlantilla.isEmpty() ){
-            // Cambiamos la URL por el PATH Local
             sustituyeUrlPorPathLocalPlantilla()
         }
 
@@ -389,7 +400,6 @@ class ProcesoViewModel @Inject constructor(
             borrarRecursos()
         }
 
-        // Indicamos el momento en que se inicia la descarga
         withContext(Dispatchers.Main) {
             stateEveniment = if (stateEveniment.totalRecursos > 0) {
                 stateEveniment.copy(bandInicioDescarga = true)
@@ -398,6 +408,12 @@ class ProcesoViewModel @Inject constructor(
                 stateEveniment.copy(bandDescargaRecursos = false)
             }
         }
+    }
+
+    fun iniciarDescargaInformacion(){
+            descargarArchivosPantalla(stateDescargaRecursos.recursosPantalla)
+            descargarArchivos(stateDescargaRecursos.recursosPlantilla)
+            descargarArchivos(stateDescargaRecursos.recursosPrincipal)
     }
 
     fun borrarRecursos(){
@@ -1000,10 +1016,10 @@ class ProcesoViewModel @Inject constructor(
                 _recursosId.add( descargar( recursoNombre, recurso, "Datos" ) )
             }
         }
-        else{
+        // else{
             // Cambiamos la URL por el PATH Local
-            sustituyeUrlPorPathLocalPantalla()
-        }
+            // sustituyeUrlPorPathLocalPantalla()
+        // }
     }
 
     /**
@@ -1228,7 +1244,7 @@ class ProcesoViewModel @Inject constructor(
         cronJobTimer?.cancel()
         cronJobTimer = viewModelScope.launch(Dispatchers.Default) {
             while (true){
-                delay(1000) // 1000
+                delay(5000) // 1000
                 val tiempoActual = setTimeZone( System.currentTimeMillis(), stateInformacionPantalla.time_zone )
 
                 if( fechaActualGeneral == null || fechaActualGeneral != tiempoActual.toLocalDate().toString() ){
