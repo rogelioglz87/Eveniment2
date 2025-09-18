@@ -1,11 +1,13 @@
 package ita.tech.eveniment.services
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import ita.tech.eveniment.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,18 +21,21 @@ class EvenimentServices: Service() {
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
+    @SuppressLint("SuspiciousIndentation")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         scope.launch {
 
             while (true) {
                 // Verificamos si la App esta abierta
                 if (!isMainAppRunning()) {
+                    //-- ANDROID 11
+                    /*
                     // Comando que inicia de nuevo la App.
                     val command = "am start -n ${packageName}/.MainActivity"
 
                         try {
                             // 1. Inicia un proceso de superusuario ('su') de forma interactiva
-                            val process = Runtime.getRuntime().exec("su")
+                            val process = Runtime.getRuntime().exec("/system/xbin/su")
 
                             // 2. Obtenemos un canal para escribir comandos en el proceso
                             val os = DataOutputStream(process.outputStream)
@@ -50,6 +55,22 @@ class EvenimentServices: Service() {
                         }catch (e: IOException){
                             e.message?.let { Log.d("ROOT_COMMAND", it) }
                         }
+                    */
+                    //-- ANDROID 9
+                    val launchIntent = Intent(applicationContext, MainActivity::class.java).apply {
+                        // Flags importantes para traer la app al frente o crearla si no existe
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        )
+                    }
+
+                    try {
+                        startActivity(launchIntent)
+                    } catch (e: Exception) {
+                        Log.e("WatchdogService", "Falló el intento de startActivity sin root.", e)
+                    }
                 }
 
                 // Esperamos 5 seg antes de volver a verificar
