@@ -37,6 +37,7 @@ import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Uno
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Once
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Trece
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Quince
 
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -186,6 +187,10 @@ fun HomeView(
 
                 "14" -> {
                     Plantilla_Horizontal_Catorce(recursos, procesoVM)
+                }
+
+                "15" -> {
+                    Plantilla_Horizontal_Quince(recursos, procesoVM)
                 }
 
                 else -> {

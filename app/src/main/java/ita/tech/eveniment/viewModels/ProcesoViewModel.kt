@@ -338,7 +338,8 @@ class ProcesoViewModel @Inject constructor(
 
         //-- API RSS
         if(stateInformacionPantalla.tipo_disenio == "13" ||
-            stateInformacionPantalla.tipo_disenio == "14"){
+            stateInformacionPantalla.tipo_disenio == "14" ||
+            stateInformacionPantalla.tipo_disenio == "15"){
             obtenerInformacionRss()
         }
 
