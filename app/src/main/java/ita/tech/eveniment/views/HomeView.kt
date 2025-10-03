@@ -126,6 +126,9 @@ fun HomeView(
                 {
                     procesoVM.descargarInformacionPantalla()
                 }
+                else if( comando == "reiniciar_box" ){
+                    procesoVM.reiniciarDispositivo()
+                }
             }
         }
 

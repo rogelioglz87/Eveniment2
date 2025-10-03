@@ -45,6 +45,7 @@ import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.ui.theme.EvenimentTheme
 import ita.tech.eveniment.util.alarmaDeReinicio
 import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
+import ita.tech.eveniment.util.alarmaDeReinicioDispositivo
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,13 +69,15 @@ class MainActivity : ComponentActivity() {
         // val context = this
 
         // -- Activamos alarma de reinicio para la App
-        alarmaDeReinicio(this)
+        // alarmaDeReinicio(this)
+
+        // Programa la alarma cuando la app se inicia
+        alarmaDeReinicioDispositivo(this)
 
         // -- Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
-        /*
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
-        */
+
 
         // -- Inicia el Monitoreo de la App
         val serviceIntent = Intent(this, EvenimentServices::class.java)
@@ -88,7 +91,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             // Estado para el permiso de administrador de dispositivo
-            // var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
+            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
 
             /**
              * Permisos para la lectura de archivos Locales
@@ -99,30 +102,15 @@ class MainActivity : ComponentActivity() {
                             ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                 )
             }
-/*
-            val permissionLaucher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission(),
-                onResult = { isGranted -> permission = isGranted }
-            )
-*/
+
             val permissionLaucher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestMultiplePermissions(),
                 onResult = { permissionsMap ->
                     permission = permissionsMap.values.all { it }
                 }
             )
-/*
-            var permissionWrite by remember {
-                mutableStateOf(ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED )
-            }
 
-            val permissionLaucherWrite = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission(),
-                onResult = { isGranted -> permissionWrite = isGranted }
-            )
-*/
             // Launcher para el permiso de administrador de dispositivo
-            /*
             val deviceAdminLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
@@ -134,7 +122,7 @@ class MainActivity : ComponentActivity() {
                     startLockTask()
                 }
             }
-            */
+
 
             // Obtenemos una referencia a la Activity actual
             val activity = LocalContext.current as Activity
@@ -148,7 +136,6 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(key1 = true) {
                 // Permiso: Administrador
-                /*
                 if (!isAdminActive) {
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                         putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
@@ -156,7 +143,7 @@ class MainActivity : ComponentActivity() {
                     }
                     deviceAdminLauncher.launch(intent)
                 }
-                */
+
 
                 // Permiso: Almacenamiento
                 if( !permission ){
@@ -168,10 +155,6 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                 }
-
-                // if( !permissionWrite ){
-                    // permissionLaucherWrite.launch( Manifest.permission.WRITE_EXTERNAL_STORAGE )
-                // }
 
                 launch(Dispatchers.IO) {
                     // Validamos estatus de red
@@ -230,7 +213,7 @@ class MainActivity : ComponentActivity() {
 
             EvenimentTheme {
                 // if (isAdminActive && permission) {
-                if (permission) {
+                if (isAdminActive && permission) {
                     NavManager(procesoVM)
                 }else {
                     // Muestra una pantalla de espera o de explicación si no hay permisos

@@ -87,7 +87,7 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.30f)
+                .weight(0.50f)
                 .background(Color.White)
         ) {
             if (!recargarPaginaWeb) {
@@ -104,13 +104,12 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.49f)
+                .weight(0.29f)
                 .background(stateEveniment.color_primario),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            Spacer(modifier = Modifier.size(20.dp))
-            // Spacer(modifier = Modifier.weight(1f) )
+            Spacer(modifier = Modifier.size(7.dp)) // 20.dp
             Text(
                 text = stateInformacionPantalla.textoLibre,
                 color = stateEveniment.color_texto,
@@ -118,7 +117,7 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
                 fontSize = P1_SIZE_TITULO.sp
             )
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(15.dp)) // 15.dp
             Text(
                 text = stateInformacionPantalla.tituloCentro,
                 color = stateEveniment.color_texto,
@@ -131,36 +130,31 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
                 fontWeight = FontWeight.Bold,
                 fontSize = P1_SIZE_TITULO.sp
             )
-
-
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(20.dp)) // 60.dp
             Text(
                 text = procesoVM.horaActual,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P1_SIZE_TITULO.sp
             )
-
-            Spacer(modifier = Modifier.height(15.dp))
-            // "Miércoles, 03 de Septiembre" procesoVM.fechaActualEspaniol
+            Spacer(modifier = Modifier.height(5.dp)) // 15.dp
             Text(
                 text = procesoVM.fechaActualEspaniol,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P14_SIZE_FECHA.sp
             )
-            // Wednesday, 03 September procesoVM.fechaActualIngles
-            Text(
+            /*Text(
                 text = procesoVM.fechaActualIngles,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P14_SIZE_FECHA.sp
-            )
+            )*/
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(end = 10.dp, bottom = 10.dp)
+                    .padding(end = 5.dp, bottom = 3.dp) // end = 10.dp, bottom = 10.dp
             ) {
                 Text(
                     text = "ita.tech",

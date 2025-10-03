@@ -4,7 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.app.DownloadManager
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Environment
@@ -20,6 +23,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ita.tech.eveniment.broadcast.MyDeviceAdminReceiver
 import ita.tech.eveniment.model.CalendarioAlarmaDB
 import ita.tech.eveniment.model.InformacionPantallaDB
 import ita.tech.eveniment.model.InformacionPantallaModel
@@ -60,8 +64,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.DataOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.time.ZonedDateTime
@@ -1378,6 +1384,44 @@ class ProcesoViewModel @Inject constructor(
                     actualizarListaReproduccion()
                 }
             }
+        }
+    }
+
+    fun reiniciarDispositivo(){
+        /* NO FUNCIONA EN ANDROID 9
+        try {
+            val command = "/system/bin/reboot"
+            // 1. Inicia un proceso de superusuario ('su') de forma interactiva
+            val process = Runtime.getRuntime().exec("/system/xbin/su")
+
+            // 2. Obtenemos un canal para escribir comandos en el proceso
+            val os = DataOutputStream(process.outputStream)
+
+            // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
+            os.writeBytes("$command\n")
+            os.flush()
+
+            // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
+            os.writeBytes("exit\n")
+            os.flush()
+
+            // 5. Esperamos a que el proceso y sus comandos terminen
+            process.waitFor()
+
+            // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
+        }catch (e: IOException){
+            e.message?.let { Log.d("ROOT_COMMAND", it) }
+        }
+        */
+
+        // REINICIA EN DISPOSITIVO PERO NECEITA PERMISOS DE ADMINISTRADOR
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val adminComponent = ComponentName(context, MyDeviceAdminReceiver::class.java)
+
+        if (dpm.isDeviceOwnerApp(context.packageName)) {
+            dpm.reboot(adminComponent)
+        } else {
+            Log.e("Reboot", "La app no es Device Owner, no se puede reiniciar.")
         }
     }
 
