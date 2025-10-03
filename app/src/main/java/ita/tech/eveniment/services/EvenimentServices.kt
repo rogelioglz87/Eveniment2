@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import ita.tech.eveniment.MainActivity
@@ -28,49 +29,90 @@ class EvenimentServices: Service() {
             while (true) {
                 // Verificamos si la App esta abierta
                 if (!isMainAppRunning()) {
-                    //-- ANDROID 11
-                    /*
-                    // Comando que inicia de nuevo la App.
-                    val command = "am start -n ${packageName}/.MainActivity"
 
-                        try {
-                            // 1. Inicia un proceso de superusuario ('su') de forma interactiva
-                            val process = Runtime.getRuntime().exec("/system/xbin/su")
+                    when (Build.VERSION.SDK_INT) {
 
-                            // 2. Obtenemos un canal para escribir comandos en el proceso
-                            val os = DataOutputStream(process.outputStream)
+                        //-- ANDROID 9
+                        Build.VERSION_CODES.P -> {
+                            val launchIntent = Intent(applicationContext, MainActivity::class.java).apply {
+                                // Flags importantes para traer la app al frente o crearla si no existe
+                                addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                )
+                            }
 
-                            // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
-                            os.writeBytes("$command\n")
-                            os.flush()
-
-                            // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
-                            os.writeBytes("exit\n")
-                            os.flush()
-
-                            // 5. Esperamos a que el proceso y sus comandos terminen
-                            process.waitFor()
-
-                            // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
-                        }catch (e: IOException){
-                            e.message?.let { Log.d("ROOT_COMMAND", it) }
+                            try {
+                                startActivity(launchIntent)
+                            } catch (e: Exception) {
+                                Log.e("WatchdogService", "Falló el intento de startActivity sin root.", e)
+                            }
                         }
-                    */
-                    //-- ANDROID 9
-                    val launchIntent = Intent(applicationContext, MainActivity::class.java).apply {
-                        // Flags importantes para traer la app al frente o crearla si no existe
-                        addFlags(
-                            Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        )
+
+                        //-- ANDROID 11
+                        30 -> {
+                            // Comando que inicia de nuevo la App.
+                            val command = "am start -n ${packageName}/.MainActivity"
+
+                            try {
+                                // 1. Inicia un proceso de superusuario ('su') de forma interactiva
+                                val process = Runtime.getRuntime().exec("/system/xbin/su")
+
+                                // 2. Obtenemos un canal para escribir comandos en el proceso
+                                val os = DataOutputStream(process.outputStream)
+
+                                // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
+                                os.writeBytes("$command\n")
+                                os.flush()
+
+                                // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
+                                os.writeBytes("exit\n")
+                                os.flush()
+
+                                // 5. Esperamos a que el proceso y sus comandos terminen
+                                process.waitFor()
+
+                                // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
+                            }catch (e: IOException){
+                                e.message?.let { Log.d("ROOT_COMMAND", it) }
+                            }
+                        }
+                        // Por default dejamos la conffiguracion de Android 11, hasta que se realicen pruebas en las demas versiones.
+                        else -> {
+                            // Comando que inicia de nuevo la App.
+                            val command = "am start -n ${packageName}/.MainActivity"
+
+                            try {
+                                // 1. Inicia un proceso de superusuario ('su') de forma interactiva
+                                val process = Runtime.getRuntime().exec("/system/xbin/su")
+
+                                // 2. Obtenemos un canal para escribir comandos en el proceso
+                                val os = DataOutputStream(process.outputStream)
+
+                                // 3. Escribimos nuestro comando y simulamos un "Enter" con '\n'
+                                os.writeBytes("$command\n")
+                                os.flush()
+
+                                // 4. Escribimos el comando 'exit' para cerrar la shell de root limpiamente
+                                os.writeBytes("exit\n")
+                                os.flush()
+
+                                // 5. Esperamos a que el proceso y sus comandos terminen
+                                process.waitFor()
+
+                                // Log.d("ROOT_COMMAND", "Comando '$command' ejecutado con código de salida ${process.exitValue()}")
+                            }catch (e: IOException){
+                                e.message?.let { Log.d("ROOT_COMMAND", it) }
+                            }
+                        }
                     }
 
-                    try {
-                        startActivity(launchIntent)
-                    } catch (e: Exception) {
-                        Log.e("WatchdogService", "Falló el intento de startActivity sin root.", e)
-                    }
+
+
+
+
+
                 }
 
                 // Esperamos 5 seg antes de volver a verificar
