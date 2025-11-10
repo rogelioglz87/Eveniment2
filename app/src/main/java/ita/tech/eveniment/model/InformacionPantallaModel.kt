@@ -36,6 +36,10 @@ data class InformacionPantallaModel(
     val tipo_fuente_eventos: String,
     val rss_adicional: String,
     val id_pantalla: String,
+    val id_evento: Int,
+    val tiempo_sin_internet: Int,
+    val recursos_nas: String,
+    val url_slide: String,
     val calendario_operativo: String
 
 )

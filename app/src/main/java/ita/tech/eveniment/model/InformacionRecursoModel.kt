@@ -14,5 +14,6 @@ data class InformacionRecursoModel(
     val pagina_powerbi: String,
     val prioridad: String,
     val fecha_ini: String,
-    val fecha_fin: String
+    val fecha_fin: String,
+    val recursos_nas: String
 )

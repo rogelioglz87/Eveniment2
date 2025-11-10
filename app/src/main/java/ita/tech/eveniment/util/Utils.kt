@@ -1,5 +1,9 @@
 package ita.tech.eveniment.util
 
+import android.net.Uri
+import ita.tech.eveniment.model.RecursoDePlaylist
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.DataOutputStream
 import java.io.IOException
 import java.time.Instant
@@ -86,6 +90,41 @@ fun ejecutarComando( comando:String ): String {
         return output.toString()
     }catch (e: IOException){
         e.printStackTrace()
+        return ""
+    }
+}
+
+fun parseStringToObject( json: String ): JSONObject {
+    val jObject = JSONObject(json)
+    return jObject
+}
+
+fun parseObjectToArray( objeto: JSONObject, path: String ): List<RecursoDePlaylist>{
+    val lista = mutableListOf<RecursoDePlaylist>()
+    if( objeto.length() > 0 ){
+        for( i in 0 until objeto.length() ){
+            val datoObject = parseStringToObject(objeto.getString(i.toString()))
+            val esVideo = datoObject.getString("tipo_archivo") == "video"
+            lista.add(RecursoDePlaylist(
+                path = "$path/${datoObject.getString("nombre")}",
+                esVideo = esVideo,
+                duracion = datoObject.getLong("duracion")
+            ))
+        }
+    }
+    return lista
+}
+
+fun obtener_path( path: String ): String{
+    try {
+        val uri = Uri.parse(path)
+        val nombreCarpeta = uri.getQueryParameter("carpeta")
+        if (nombreCarpeta.isNullOrEmpty()) {
+            return ""
+        }
+        return "${uri.scheme}://${uri.host}/$nombreCarpeta"
+
+    } catch (e: Exception) {
         return ""
     }
 }

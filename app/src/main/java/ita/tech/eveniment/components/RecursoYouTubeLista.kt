@@ -32,7 +32,7 @@ fun RecursoYouTubeLista(
             }
         }
 
-        val options = IFramePlayerOptions.Builder()
+        val options = IFramePlayerOptions.Builder(context)
             .controls(0)          // Oculta los controles de reproducción
             .ivLoadPolicy(3)      // Oculta las anotaciones
             // .ccLoadPolicy(1)      // Oculta las anotaciones

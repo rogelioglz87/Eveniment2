@@ -32,6 +32,8 @@ fun alarmaDeReinicio( context: Context ){
     // Si ya pasaron las 11:00 PM de hoy, programa la alarma para mañana
     if (calendar.timeInMillis <= System.currentTimeMillis()) {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
+
+
     }
 
     // -- SE CONFIGURA EL REINICIO EN UN INTERVALO DE TIEMPO (X98Q)

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.constraintlayout.compose.ConstraintLayout
 import ita.tech.eveniment.components.Carrucel
+import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun Plantilla_Horizontal_Once(
@@ -33,6 +36,36 @@ fun Plantilla_Horizontal_Once(
     var columnHeight by remember { mutableStateOf(1.0f) }
     var columnWidth by remember { mutableStateOf(1.0f) }
     var tipoSlideActualPrincipal by remember { mutableStateOf("") }
+
+    val estatusInternet = procesoVM.stateEveniment.estatusInternet
+    // Variables para mostrar recursos NAS
+    val id_evento = procesoVM.stateInformacionPantalla.id_evento
+    val tiempo_sin_internet = procesoVM.stateInformacionPantalla.tiempo_sin_internet
+    val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
+    var contador by remember { mutableIntStateOf(0) }
+    var showNAS by remember { mutableStateOf(false) }
+
+    //-- Detectamos si el estatus del Internet
+    LaunchedEffect(estatusInternet) {
+        // Validamos si es necesario mostrar un recurso de la NAS
+        if( id_evento > 0 && recursos_nas.isNotEmpty() ){
+            if( !estatusInternet ){
+                // Si el tiempo de desconexion es mayor al indicado por el usuario en la pantalla,
+                // mostrar el recurso (NAS) guardado en la pantalla
+                while (contador < tiempo_sin_internet){
+                    delay(1000L)
+                    contador++
+                }
+                showNAS = true
+            }
+            else{
+                showNAS = false
+                if( contador > 0 ){
+                    contador = 0;
+                }
+            }
+        }
+    }
 
     LaunchedEffect(tipoSlideActualPrincipal) {
         Log.d("*** TIPO SLIDE", tipoSlideActualPrincipal);
@@ -56,7 +89,15 @@ fun Plantilla_Horizontal_Once(
         animationSpec = tween(durationMillis = 900)
     )
 
-    ConstraintLayout(Modifier.fillMaxSize()) {
+    ConstraintLayout(
+        modifier = Modifier
+            /* Medidas: Normal */
+            .fillMaxSize()
+
+            /* Medidas: Mundo E */
+            /*.fillMaxHeight(0.38f)
+            .fillMaxWidth(0.75f) */
+    ) {
         val (contenidoPrincipal, contenidoAnuncios) = createRefs()
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
         val timeZone = procesoVM.stateInformacionPantalla.time_zone
@@ -94,7 +135,18 @@ fun Plantilla_Horizontal_Once(
                 }
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                if(showNAS){
+                    RecursoListaVideos(
+                        procesoVM.stateInformacionPantalla.url_slide,
+                        recursos_nas,
+                        isCurrentlyVisible = true,
+                        1
+                    )
+                }
+                else{
+                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                }
+
             }else{
                 Column(
                     modifier = Modifier

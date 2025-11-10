@@ -809,6 +809,10 @@ class ProcesoViewModel @Inject constructor(
                 tipo_fuente_eventos = result?.tipo_fuente_eventos ?: "",
                 rss_adicional = result?.rss_adicional ?: "",
                 id_pantalla = result?.id_pantalla ?: "",
+                id_evento = result?.id_evento ?: 0,
+                tiempo_sin_internet = result?.tiempo_sin_internet ?: 0,
+                recursos_nas = result?.recursos_nas ?: "",
+                url_slide = result?.url_slide ?: "",
                 calendario_operativo = result?.calendario_operativo ?: ""
             )
         }

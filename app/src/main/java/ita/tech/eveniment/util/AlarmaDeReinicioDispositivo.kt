@@ -29,7 +29,7 @@ fun alarmaDeReinicioDispositivo(context: Context){
     // 2. Calcula la hora del próximo domingo a las 7 am
     var nextRebootTime = now
         // .with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)) // Busca el próximo domingo (o hoy si es domingo) .SUNDAY
-        .withHour(9)
+        .withHour(9) // 9
         .withMinute(0)
         .withSecond(0)
         .withNano(0)

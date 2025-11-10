@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import ita.tech.eveniment.components.Carrucel
+import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun Plantilla_Horizontal_Trece(
@@ -40,6 +43,14 @@ fun Plantilla_Horizontal_Trece(
 ){
     var columnWidth by remember { mutableStateOf(1.0f) }
     var tipoSlideActualPrincipal by remember { mutableStateOf("") }
+    val estatusInternet = procesoVM.stateEveniment.estatusInternet
+
+    // Variables para mostrar recursos NAS
+    val id_evento = procesoVM.stateInformacionPantalla.id_evento
+    val tiempo_sin_internet = procesoVM.stateInformacionPantalla.tiempo_sin_internet
+    val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
+    var contador by remember { mutableIntStateOf(0) }
+    var showNAS by remember { mutableStateOf(false) }
 
     LaunchedEffect(tipoSlideActualPrincipal) {
         Log.d("*** TIPO SLIDE", tipoSlideActualPrincipal);
@@ -50,18 +61,48 @@ fun Plantilla_Horizontal_Trece(
         }
     }
 
+    //-- Detectamos si el estatus del Internet
+    LaunchedEffect(estatusInternet) {
+        // Validamos si es necesario mostrar un recurso de la NAS
+        if( id_evento > 0 && recursos_nas.isNotEmpty() ){
+            if( !estatusInternet ){
+                // Si el tiempo de desconexion es mayor al indicado por el usuario en la pantalla,
+                // mostrar el recurso (NAS) guardado en la pantalla
+                while (contador < tiempo_sin_internet){
+                    delay(1000L)
+                    contador++
+                }
+                showNAS = true
+            }
+            else{
+                showNAS = false
+                if( contador > 0 ){
+                    contador = 0;
+                }
+            }
+        }
+    }
+
     val animatedColumnWidth by animateFloatAsState(
         targetValue = columnWidth,
         animationSpec = tween(durationMillis = 900)
     )
 
-    ConstraintLayout(Modifier.fillMaxSize()) {
+    ConstraintLayout(
+        modifier = Modifier
+            /* Medidas: Normal */
+            .fillMaxSize()
+
+            /* Medidas: Mundo E */
+            /*.fillMaxHeight(0.38f)
+            .fillMaxWidth(0.75f)*/
+    ) {
         val (contenidoPrincipal, contenidoAnuncios, rss) = createRefs()
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
         val timeZone = procesoVM.stateInformacionPantalla.time_zone
         Column(
             modifier = Modifier
-                .fillMaxHeight(0.95f)
+                .fillMaxHeight(0.90f)
                 .fillMaxWidth()
                 .background(Color.Black)
                 .constrainAs(contenidoPrincipal) {}
@@ -86,7 +127,7 @@ fun Plantilla_Horizontal_Trece(
         }
         Column(
             modifier = Modifier
-                .fillMaxHeight(0.95f)
+                .fillMaxHeight(0.90f)
                 .fillMaxWidth(animatedColumnWidth)
                 .background(Color.White)
                 .constrainAs(contenidoAnuncios) {
@@ -94,7 +135,18 @@ fun Plantilla_Horizontal_Trece(
                 }
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                if(showNAS){
+                    RecursoListaVideos(
+                        procesoVM.stateInformacionPantalla.url_slide,
+                        recursos_nas,
+                        isCurrentlyVisible = true,
+                        1
+                    )
+                }
+                else{
+                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                }
+
             }else{
                 Column(
                     modifier = Modifier
@@ -110,7 +162,7 @@ fun Plantilla_Horizontal_Trece(
         Column (
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.05f)
+                .fillMaxHeight(0.10f)
                 .background(Color.Black)
                 .constrainAs(rss){
                     bottom.linkTo(parent.bottom)
@@ -121,7 +173,7 @@ fun Plantilla_Horizontal_Trece(
                 text = procesoVM.noticias_rss,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
+                fontSize = 18.sp, // 20.sp
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 softWrap = false,
