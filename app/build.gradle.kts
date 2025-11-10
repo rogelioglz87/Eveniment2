@@ -106,7 +106,8 @@ dependencies {
 
     //-- RETROFIT
     // implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0") // estaba comentado
 
     //-- DAGGER HILT
     implementation("com.google.dagger:hilt-android:2.51.1")
@@ -127,7 +128,8 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0-beta01")
 
     //-- API YouTube
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2")
+    // implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
 
     //-- API CHECK INTERNET
     implementation("com.github.pwittchen:reactivenetwork-rx2:3.0.8")

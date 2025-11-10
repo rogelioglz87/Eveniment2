@@ -39,7 +39,7 @@ fun RecursoYouTube(
             }
         }
 
-        val options = IFramePlayerOptions.Builder()
+        val options = IFramePlayerOptions.Builder(context)
             .controls(0)          // Oculta los controles de reproducción
             .ivLoadPolicy(3)      // Oculta las anotaciones
             // Si desactivamos los subtitulos por default del video, youtube activa los subtitulos automaticos para el video

@@ -35,5 +35,9 @@ data class InformacionPantallaState(
     val tipo_fuente_eventos: String = "",
     val rss_adicional: String = "",
     val id_pantalla: String = "",
+    val id_evento: Int = 0,
+    val tiempo_sin_internet: Int = 0,
+    val recursos_nas: String = "",
+    val url_slide: String = "",
     val calendario_operativo: String = ""
 )

@@ -1,7 +1,7 @@
 package ita.tech.eveniment.components
 
+import android.annotation.SuppressLint
 import androidx.annotation.OptIn
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +14,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -26,6 +25,7 @@ import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnrememberedMutableState")
 @OptIn(UnstableApi::class)
 @Composable
 fun Carrucel(
@@ -34,6 +34,8 @@ fun Carrucel(
     timeZone: String,
     onTipoSlideChange: (String) -> Unit
 ){
+    val context = LocalContext.current
+
     //-- Instanciamos el ViewModel
     val carrucelVM: CarrucelViewModel = remember { CarrucelViewModel() }
 
@@ -46,7 +48,7 @@ fun Carrucel(
     val recursos by carrucelVM.listaFiltrada.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    // val context = LocalContext.current
 
     val pagerState = rememberPagerState( pageCount = { recursos.size }, initialPage = 0 )
 
@@ -57,7 +59,6 @@ fun Carrucel(
         if( recursoindex != null ){
             carrucelVM.detener()
         }
-
     }
 
     LaunchedEffect(pagerState.currentPage, recursos) {
@@ -97,7 +98,7 @@ fun Carrucel(
         }
     }
 
-    if( recursos.isNotEmpty() ){
+    if (recursos.isNotEmpty()) {
         HorizontalPager(
             state = pagerState,
         ) { page ->
@@ -108,49 +109,54 @@ fun Carrucel(
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .background(color = Color.Black)
-                    // Aplica el efecto de fade con graphicsLayer
-                    /*
-                    .graphicsLayer {
-                        // Calcula el desplazamiento de la página
-                        val pageOffset = pagerState.currentPage - page + pagerState.currentPageOffsetFraction
-                        // Calcula el valor alfa para el efecto de fade
-                        val alpha = lerp(
-                            start = 0f, // Opacidad mínima
-                            stop = 1f,    // Opacidad máxima
-                            fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
-                        )
+                // Aplica el efecto de fade con graphicsLayer
+                /*
+                .graphicsLayer {
+                    // Calcula el desplazamiento de la página
+                    val pageOffset = pagerState.currentPage - page + pagerState.currentPageOffsetFraction
+                    // Calcula el valor alfa para el efecto de fade
+                    val alpha = lerp(
+                        start = 0f, // Opacidad mínima
+                        stop = 1f,    // Opacidad máxima
+                        fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+                    )
 
-                        // Aplica la opacidad a la página
-                        this.alpha = alpha
-                    }
-                    */
+                    // Aplica la opacidad a la página
+                    this.alpha = alpha
+                }
+                */
             ) {
                 // Definimos el Tipo de recuso a mostrar (Imagen, Video, Youtube, Pagina Web etc...)
                 val recurso = recursos[page].datos.toString()
 
                 if (recursos[page].tipo_slide == "imagen") {
                     RecursoImagen(rutaImagen = recurso, context = context)
-                }
-                else if (recursos[page].tipo_slide == "video") {
-                    RecursoVideo(recurso, isCurrentlyVisible = (pagerState.currentPage == page), recursos.size )
-                }
-                else if (recursos[page].tipo_slide == "cctv") {
+                } else if (recursos[page].tipo_slide == "video") {
+                    RecursoVideo(
+                        recurso,
+                        isCurrentlyVisible = (pagerState.currentPage == page),
+                        recursos.size
+                    )
+                } else if (recursos[page].tipo_slide == "cctv") {
                     RecursoCCTV(path = recurso)
-                }
-                else if (recursos[page].tipo_slide == "pagina_web") {
+                } else if (recursos[page].tipo_slide == "pagina_web") {
                     RecursoWeb(url = recurso)
-                }
-                else if(recursos[page].tipo_slide == "youtube" && ( recursos[page].tipo_video_youtube == "video" || recursos[page].tipo_video_youtube == "en_directo" ) ){
+                } else if (recursos[page].tipo_slide == "youtube" && (recursos[page].tipo_video_youtube == "video" || recursos[page].tipo_video_youtube == "en_directo")) {
                     RecursoYouTube(videoId = recurso)
-                }
-                else if(recursos[page].tipo_slide == "youtube" && recursos[page].tipo_video_youtube == "lista_reproduccion" ){
+                } else if (recursos[page].tipo_slide == "youtube" && recursos[page].tipo_video_youtube == "lista_reproduccion") {
                     RecursoYouTubeLista(recurso)
+                } else if (recursos[page].tipo_slide == "nas") {
+                    RecursoListaVideos(
+                        recurso,
+                        recursos[page].recursos_nas,
+                        isCurrentlyVisible = (pagerState.currentPage == page),
+                        recursos.size
+                    )
                 }
 
             }
         }
-    }
-    else{
+    } else {
         RecursoImagen(rutaImagen = imgDefault, context = context)
     }
 }
