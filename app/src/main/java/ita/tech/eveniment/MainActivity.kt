@@ -1,14 +1,21 @@
 package ita.tech.eveniment
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.UiModeManager
 import android.app.admin.DevicePolicyManager
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -31,6 +38,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
 import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy
@@ -48,6 +59,7 @@ import ita.tech.eveniment.util.Constants.Companion.HOST_INTERNET
 import ita.tech.eveniment.util.alarmaDeReinicioDispositivo
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -57,8 +69,8 @@ class MainActivity : ComponentActivity() {
     private var disconnectionTimestamp: Long = 0L // 0 significa que estamos conectados
 
     // Instancia de DevicePolicyManager y ComponentName
-    private lateinit var dpm: DevicePolicyManager
-    private lateinit var adminComponent: ComponentName
+    private lateinit var dpm: DevicePolicyManager // (SE COMENTA PARA ANDROID 14 TV)
+    private lateinit var adminComponent: ComponentName // (SE COMENTA PARA ANDROID 14 TV)
 
     val procesoVM: ProcesoViewModel by viewModels()
 
@@ -66,7 +78,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // val context = this
+        val context = this
 
         // -- Activamos alarma de reinicio para la App
         // alarmaDeReinicio(this)
@@ -75,8 +87,8 @@ class MainActivity : ComponentActivity() {
         alarmaDeReinicioDispositivo(this)
 
         // -- Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
-        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager // (SE COMENTA PARA ANDROID 14 TV)
+        adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java) // (SE COMENTA PARA ANDROID 14 TV)
 
 
         // -- Inicia el Monitoreo de la App
@@ -90,39 +102,68 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            // Estado para el permiso de administrador de dispositivo
-            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
+
+            val esAndroid12 = Build.VERSION.SDK_INT >= 31
+
+            // Permiso de superposicion (Overlay)
+            var hasOverlayPermission by remember {
+                mutableStateOf(Settings.canDrawOverlays(context))
+            }
+
+            // Estado para el permiso de administrador de dispositivo // (SE COMENTA PARA ANDROID 14 TV)
+            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) } // (SE COMENTA PARA ANDROID 14 TV)
 
             /**
              * Permisos para la lectura de archivos Locales
              */
-            var permission by remember {
-                mutableStateOf(
-                    ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                            ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                )
-            }
+            var permission by remember { mutableStateOf(checkStoragePermissions(context)) }
 
+            // Permiso para Android 10 o inferiores (Escritura y Lectura)
             val permissionLaucher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestMultiplePermissions(),
                 onResult = { permissionsMap ->
-                    permission = permissionsMap.values.all { it }
+                    if(permissionsMap.values.all { it }){
+                        permission = true
+                    }
                 }
             )
 
-            // Launcher para el permiso de administrador de dispositivo
+            //  Permiso para Android 11 y superiores (permiso especial)
+            val allFilesAccessLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult(),
+                onResult = {
+                    // Después de que el usuario regresa de Ajustes,
+                    // volvemos a verificar el permiso.
+                    permission = checkStoragePermissions(context)
+                }
+            )
+
+            // Launcher para el permiso de administrador de dispositivo (SE COMENTA PARA ANDROID 14 TV)
             val deviceAdminLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                // Verificamos si el permiso de administrador se concedió después de la solicitud
-                isAdminActive = dpm.isAdminActive(adminComponent)
-                if (isAdminActive) {
-                    // Si se concedió, anclamos la pantalla
-                    println("***Si se concedió, anclamos la pantalla")
-                    startLockTask()
-                }
+                // Si Android es mayor o igual a 12 no solicitamos el modo Kiosco ni permisos de Administrador
+                // if (!esAndroid12) {
+                    // Verificamos si el permiso de administrador se concedió después de la solicitud
+                    isAdminActive = dpm.isAdminActive(adminComponent)
+                    if (isAdminActive) {
+                        // Si se concedió, anclamos la pantalla
+                        startLockTask()
+                    }
+                // }
             }
 
+            // if( esAndroid12 ) {
+                // isAdminActive = true
+            // }
+
+            // Launcher para solicitar el permiso Overlay
+            val overlayPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) {
+                // Al regresar, verificamos si se concedió
+                hasOverlayPermission = Settings.canDrawOverlays(context)
+            }
 
             // Obtenemos una referencia a la Activity actual
             val activity = LocalContext.current as Activity
@@ -135,11 +176,15 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(key1 = true) {
-                // Permiso: Administrador
-                if (!isAdminActive) {
+
+                // Permiso: Administrador // (SE COMENTA PARA ANDROID 14 TV)
+                if ( !isAdminActive) { // !esAndroid12 &&
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                         putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
-                        putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Esta aplicación necesita permisos de administrador para habilitar el modo Kiosco.")
+                        putExtra(
+                            DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                            "Esta aplicación necesita permisos de administrador para habilitar el modo Kiosco."
+                        )
                     }
                     deviceAdminLauncher.launch(intent)
                 }
@@ -147,13 +192,26 @@ class MainActivity : ComponentActivity() {
 
                 // Permiso: Almacenamiento
                 if( !permission ){
-                    // permissionLaucher.launch( Manifest.permission.READ_EXTERNAL_STORAGE )
-                    permissionLaucher.launch(
-                        arrayOf(
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    // Lógica de solicitud basada en la versión de Android
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+                        try {
+                            // Abrir la pantalla de Ajustes para MANAGE_EXTERNAL_STORAGE
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                            intent.data = Uri.parse("package:$packageName")
+                            allFilesAccessLauncher.launch(intent)
+                        }catch ( e: ActivityNotFoundException){
+                            println("*** --- Error: $e")
+                        }
+                    }
+                    else{
+                        // Lanzamos la solicitud con un ARRAY de los permisos.
+                        permissionLaucher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
                         )
-                    )
+                    }
                 }
 
                 launch(Dispatchers.IO) {
@@ -212,8 +270,8 @@ class MainActivity : ComponentActivity() {
             }
 
             EvenimentTheme {
-                // if (isAdminActive && permission) {
-                if (isAdminActive && permission) {
+                if (isAdminActive && permission && hasOverlayPermission) { // (SE COMENTA PARA ANDROID 14 TV)
+                // if (permission) {
                     NavManager(procesoVM)
                 }else {
                     // Muestra una pantalla de espera o de explicación si no hay permisos
@@ -221,13 +279,56 @@ class MainActivity : ComponentActivity() {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Esperando permisos para continuar...")
                             Button(onClick = {
-                                // 4. Lanzamos la solicitud con un ARRAY de los permisos.
-                                permissionLaucher.launch(
-                                    arrayOf(
-                                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                if(!permission){
+                                    // Lógica de solicitud basada en la versión de Android
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+                                        println("*** --- Android 11 o superiores")
+                                        try{
+                                            // Abrir la pantalla de Ajustes para MANAGE_EXTERNAL_STORAGE
+                                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                                            intent.data = Uri.parse("package:$packageName")
+                                            allFilesAccessLauncher.launch(intent)
+                                        }catch (e: ActivityNotFoundException){
+                                            println("*** --- Error: $e")
+                                        }
+
+                                    }
+                                    else{
+                                        // Lanzamos la solicitud con un ARRAY de los permisos.
+                                        permissionLaucher.launch(
+                                            arrayOf(
+                                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                            )
+                                        )
+                                    }
+                                }
+
+                                // (SE COMENTA PARA ANDROID 14 TV)
+                                if (!isAdminActive) { // !esAndroid12 &&
+                                    val intent =
+                                        Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                                            putExtra(
+                                                DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                                adminComponent
+                                            )
+                                            putExtra(
+                                                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                                                "Esta aplicación necesita permisos de administrador para habilitar el modo Kiosco."
+                                            )
+                                        }
+                                    deviceAdminLauncher.launch(intent)
+                                }
+
+                                // Solicitar permiso de Overlay
+                                if( !hasOverlayPermission ){
+                                    val intent = Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        Uri.parse("package:$packageName")
                                     )
-                                )
+                                    overlayPermissionLauncher.launch(intent)
+                                }
+
                             }) {
                                 Text("Conceder Permisos")
                             }
@@ -235,6 +336,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    // Esta función comprueba el permiso correcto según la versión del SDK
+    private fun checkStoragePermissions(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+            Environment.isExternalStorageManager()
+        } else { // Android 10 e inferiores
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         }
     }
 

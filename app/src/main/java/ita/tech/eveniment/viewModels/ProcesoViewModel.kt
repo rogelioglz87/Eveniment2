@@ -343,7 +343,8 @@ class ProcesoViewModel @Inject constructor(
         }
 
         //-- API RSS
-        if(stateInformacionPantalla.tipo_disenio == "13" ||
+        if(stateInformacionPantalla.tipo_disenio == "10" ||
+            stateInformacionPantalla.tipo_disenio == "13" ||
             stateInformacionPantalla.tipo_disenio == "14" ||
             stateInformacionPantalla.tipo_disenio == "15"){
             obtenerInformacionRss()
@@ -1042,7 +1043,8 @@ class ProcesoViewModel @Inject constructor(
             .setTitle("Descargando archivos...")
             .setDescription("Espere un momento por favor.")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOCUMENTS, "/Eveniment/$recursoCarpeta/$recursoName")
+            .setAllowedOverMetered(true)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOCUMENTS, "Eveniment/$recursoCarpeta/$recursoName")
         return downloadManager.enqueue(request)
     }
 
@@ -1281,7 +1283,7 @@ class ProcesoViewModel @Inject constructor(
 
     private fun determinaOrientacionPantalla(){
         val orientacion = when( stateInformacionPantalla.tipo_disenio ){
-            "7","8","9" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            "7","8","9","16" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
         viewModelScope.launch {
@@ -1392,11 +1394,12 @@ class ProcesoViewModel @Inject constructor(
     }
 
     fun reiniciarDispositivo(){
-        /* NO FUNCIONA EN ANDROID 9
+        /* NO FUNCIONA EN ANDROID 9 */
+        /*
         try {
             val command = "/system/bin/reboot"
             // 1. Inicia un proceso de superusuario ('su') de forma interactiva
-            val process = Runtime.getRuntime().exec("/system/xbin/su")
+            // val process = Runtime.getRuntime().exec("/system/xbin/su")
 
             // 2. Obtenemos un canal para escribir comandos en el proceso
             val os = DataOutputStream(process.outputStream)
@@ -1418,7 +1421,8 @@ class ProcesoViewModel @Inject constructor(
         }
         */
 
-        // REINICIA EN DISPOSITIVO PERO NECEITA PERMISOS DE ADMINISTRADOR
+        // REINICIA EN DISPOSITIVO PERO NECESITA PERMISOS DE ADMINISTRADOR
+
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val adminComponent = ComponentName(context, MyDeviceAdminReceiver::class.java)
 
@@ -1427,6 +1431,7 @@ class ProcesoViewModel @Inject constructor(
         } else {
             Log.e("Reboot", "La app no es Device Owner, no se puede reiniciar.")
         }
+
     }
 
 }

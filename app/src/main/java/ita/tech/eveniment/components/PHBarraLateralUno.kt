@@ -84,6 +84,7 @@ fun PHBarraLateralUno(procesoVM: ProcesoViewModel) {
 
         Spacer(modifier = Modifier.height( 60.dp) )
         Text(text = stateInformacionPantalla.tituloCentro, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P1_SIZE_TITULO.sp)
+        Spacer(modifier = Modifier.height(5.dp))
         Text(text = stateInformacionPantalla.centro, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P1_SIZE_TITULO.sp)
 
         Box(
@@ -92,7 +93,7 @@ fun PHBarraLateralUno(procesoVM: ProcesoViewModel) {
                 .padding(end = 10.dp, bottom = 10.dp)
         ) {
             Text(
-                text = "www.ita.tech",
+                text = "ita.tech",
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,

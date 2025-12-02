@@ -1,14 +1,12 @@
-package ita.tech.eveniment.views.plantillasHorizontales
+package ita.tech.eveniment.views.plantillasVerticales
 
-import android.util.Log
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,25 +17,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.compose.ui.unit.dp
 import ita.tech.eveniment.components.Carrucel
+import ita.tech.eveniment.components.PVBarraUno
 import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun Plantilla_Horizontal_Once(
+fun Plantilla_Vertical_Ocho(
     recursos: List<InformacionRecursoModel>,
-    procesoVM: ProcesoViewModel,
-    recursosPlantilla: List<InformacionRecursoModel>
+    procesoVM: ProcesoViewModel
 ){
-
-    var columnHeight by remember { mutableStateOf(1.0f) }
-    var columnWidth by remember { mutableStateOf(1.0f) }
-    var tipoSlideActualPrincipal by remember { mutableStateOf("") }
-
+    val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
+    val timeZone = procesoVM.stateInformacionPantalla.time_zone
     val estatusInternet = procesoVM.stateEveniment.estatusInternet
+
     // Variables para mostrar recursos NAS
     val id_evento = procesoVM.stateInformacionPantalla.id_evento
     val tiempo_sin_internet = procesoVM.stateInformacionPantalla.tiempo_sin_internet
@@ -67,52 +63,32 @@ fun Plantilla_Horizontal_Once(
         }
     }
 
-    LaunchedEffect(tipoSlideActualPrincipal) {
-        Log.d("*** TIPO SLIDE", tipoSlideActualPrincipal);
-        if( tipoSlideActualPrincipal == "sin_publicidad" ){
-            columnHeight = 1.0f
-            columnWidth = 1.0f
-        }else{
-            columnHeight = 0.80f
-            columnWidth = 0.80f
-        }
-    }
 
-    // `animateFloatAsState` crea un valor animado
-    val animatedColumnHeight by animateFloatAsState(
-        targetValue = columnHeight,
-        animationSpec = tween(durationMillis = 900) // Configura la duración de la animación en 500ms
-    )
-
-    val animatedColumnWidth by animateFloatAsState(
-        targetValue = columnWidth,
-        animationSpec = tween(durationMillis = 900)
-    )
-
-    ConstraintLayout(
+    Column(
         modifier = Modifier
-            /* Medidas: Normal */
-            .fillMaxSize()
-
-            /* Medidas: Mundo E */
-            // .fillMaxHeight(0.38f)
-            // .fillMaxWidth(0.75f)
+            .fillMaxWidth()
+            .fillMaxHeight()
     ) {
-        val (contenidoPrincipal, contenidoAnuncios) = createRefs()
-        val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
-        val timeZone = procesoVM.stateInformacionPantalla.time_zone
+
         Column(
             modifier = Modifier
-                .fillMaxHeight()
+                .weight(0.83f)
                 .fillMaxWidth()
                 .background(Color.Black)
-                .constrainAs(contenidoPrincipal) {}
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = { tipoSlide ->
-                    // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
-                    tipoSlideActualPrincipal = tipoSlide
-                })
+                if(showNAS){
+                    RecursoListaVideos(
+                        procesoVM.stateInformacionPantalla.url_slide,
+                        recursos_nas,
+                        isCurrentlyVisible = true,
+                        1
+                    )
+                }
+                else{
+                    Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                }
+
             }else{
                 Column(
                     modifier = Modifier
@@ -127,36 +103,13 @@ fun Plantilla_Horizontal_Once(
         }
         Column(
             modifier = Modifier
-                .fillMaxHeight(animatedColumnHeight)
-                .fillMaxWidth(animatedColumnWidth)
-                .background(Color.White)
-                .constrainAs(contenidoAnuncios) {
-                    end.linkTo(parent.end)
-                }
+                .weight(0.17f)
+                .fillMaxWidth()
+                .background(color = procesoVM.stateEveniment.color_secundario) // Generan el borde al final de la barra
+                .padding(top = 10.dp)
         ) {
-            if(procesoVM.stateEveniment.mostrarCarrucel){
-                if(showNAS){
-                    RecursoListaVideos(
-                        procesoVM.stateInformacionPantalla.url_slide,
-                        recursos_nas,
-                        isCurrentlyVisible = true,
-                        1
-                    )
-                }
-                else{
-                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
-                }
-
-            }else{
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = Color.Black),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ){}
-            }
+            PVBarraUno(procesoVM = procesoVM)
         }
-    }
 
+    }
 }

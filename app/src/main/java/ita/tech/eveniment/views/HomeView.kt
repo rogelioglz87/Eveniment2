@@ -27,9 +27,12 @@ import ita.tech.eveniment.components.DownloadLabel
 import ita.tech.eveniment.components.DownloadScreen
 import ita.tech.eveniment.socket.SocketHandler
 import ita.tech.eveniment.viewModels.ProcesoViewModel
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_360_1
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_360_2
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Catorce
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cinco
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Cuatro
+import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Diez
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Doce
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Dos
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Tres
@@ -38,6 +41,9 @@ import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Nueve
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Once
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Trece
 import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Quince
+import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Ocho
+import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Siete
+import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Totem_1
 
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -172,10 +178,18 @@ fun HomeView(
                     Plantilla_Horizontal_Cinco(recursos, procesoVM)
                 }
 
+                "7" -> {
+                    Plantilla_Vertical_Siete(recursos, procesoVM)
+                }
+                "8" -> {
+                    Plantilla_Vertical_Ocho(recursos, procesoVM)
+                }
                 "9" -> {
                     Plantilla_Vertical_Nueve(recursos, procesoVM)
                 }
-
+                "10" -> {
+                    Plantilla_Horizontal_Diez(recursos, procesoVM)
+                }
                 "11" -> {
                     Plantilla_Horizontal_Once(recursos, procesoVM, recursosPlantilla)
                 }
@@ -188,12 +202,27 @@ fun HomeView(
                     Plantilla_Horizontal_Trece(recursos, procesoVM, recursosPlantilla)
                 }
 
+                // Plantillas Hir Casa
                 "14" -> {
                     Plantilla_Horizontal_Catorce(recursos, procesoVM)
                 }
-
                 "15" -> {
                     Plantilla_Horizontal_Quince(recursos, procesoVM)
+                }
+
+                //-- Plantillas Mundo E
+                "16" -> {
+                    Plantilla_Vertical_Totem_1(recursos, procesoVM, recursosPlantilla)
+                }
+                "17" -> {
+
+                }
+
+                "18" -> {
+                    Plantilla_Horizontal_360_1(recursos, procesoVM, recursosPlantilla)
+                }
+                "19" -> {
+                    Plantilla_Horizontal_360_2(recursos, procesoVM, recursosPlantilla)
                 }
 
                 else -> {

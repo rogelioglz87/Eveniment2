@@ -117,27 +117,28 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
                 fontSize = P1_SIZE_TITULO.sp
             )
 
-            Spacer(modifier = Modifier.height(15.dp)) // 15.dp
+            Spacer(modifier = Modifier.height(13.dp)) // 15.dp
             Text(
                 text = stateInformacionPantalla.tituloCentro,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P1_SIZE_TITULO.sp
             )
+            Spacer(modifier = Modifier.height(5.dp))
             Text(
                 text = stateInformacionPantalla.centro,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P1_SIZE_TITULO.sp
             )
-            Spacer(modifier = Modifier.height(20.dp)) // 60.dp
+            Spacer(modifier = Modifier.height(18.dp)) // 60.dp
             Text(
                 text = procesoVM.horaActual,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
                 fontSize = P1_SIZE_TITULO.sp
             )
-            Spacer(modifier = Modifier.height(5.dp)) // 15.dp
+            Spacer(modifier = Modifier.height(4.dp)) // 15.dp
             Text(
                 text = procesoVM.fechaActualEspaniol,
                 color = stateEveniment.color_texto,
