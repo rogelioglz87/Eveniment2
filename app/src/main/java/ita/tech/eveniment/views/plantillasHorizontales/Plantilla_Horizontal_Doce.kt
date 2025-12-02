@@ -85,8 +85,8 @@ fun Plantilla_Horizontal_Doce(
             .fillMaxSize()
 
             /* Medidas: Mundo E */
-            /*.fillMaxHeight(0.38f)
-            .fillMaxWidth(0.75f) */
+            // .fillMaxHeight(0.38f)
+            // .fillMaxWidth(0.75f)
     ) {
         val (contenidoPrincipal, contenidoAnuncios) = createRefs()
         val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo

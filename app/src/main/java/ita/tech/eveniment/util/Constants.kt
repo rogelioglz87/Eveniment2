@@ -38,6 +38,9 @@ class Constants {
         // Plantilla 14
         const val P14_SIZE_FECHA = 17
 
+        // Barra Vertical
+        const val PBV_SIZE_TITULO = 24
+
         // HOST PARA VALIDAR QUE LA APP CUENTA CON INTERNET
         // const val HOST_INTERNET = "secure.itatechapps.com"
         const val HOST_INTERNET = "google.com"

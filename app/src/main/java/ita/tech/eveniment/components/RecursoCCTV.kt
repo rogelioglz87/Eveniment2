@@ -382,6 +382,7 @@ fun crearExoplayer(context: Context, path: String, parentScope: CoroutineScope):
 
     val listener = object : Player.Listener {
         override fun onPlayerError(error: PlaybackException) {
+            println("Error Play: ${error}")
             // Usamos un Coroutine para esperar y luego reintentar
             // Espera 5 segundos antes de reintentar
             parentScope.launch {

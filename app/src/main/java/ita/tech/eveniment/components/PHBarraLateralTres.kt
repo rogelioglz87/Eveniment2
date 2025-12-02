@@ -60,7 +60,7 @@ fun PHBarraLateralTres(procesoVM: ProcesoViewModel){
                 .crossfade(true)
                 .build(),
             contentDescription = "",
-            modifier = Modifier.fillMaxWidth(0.8f)
+            modifier = Modifier.fillMaxWidth()
         )
     }
 
@@ -77,6 +77,7 @@ fun PHBarraLateralTres(procesoVM: ProcesoViewModel){
 
         Spacer(modifier = Modifier.height( 15.dp) )
         Text(text = stateInformacionPantalla.tituloCentro, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P1_SIZE_TITULO.sp)
+        Spacer(modifier = Modifier.height(5.dp))
         Text(text = stateInformacionPantalla.centro, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P1_SIZE_TITULO.sp)
 
 
