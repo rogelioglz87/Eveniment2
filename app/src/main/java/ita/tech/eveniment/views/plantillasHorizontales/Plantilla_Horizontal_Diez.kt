@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ita.tech.eveniment.components.Carrucel
+import ita.tech.eveniment.components.Clima
 import ita.tech.eveniment.components.PHBarraLateralTres
 import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.components.RecursoWeb
@@ -47,6 +50,10 @@ fun Plantilla_Horizontal_Diez(
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
 
+    // Obtenemos los datos del clima
+    val clima by procesoVM.clima.collectAsState()
+
+
     //-- Detectamos si el estatus del Internet
     LaunchedEffect(estatusInternet) {
         // Validamos si es necesario mostrar un recurso de la NAS
@@ -69,8 +76,14 @@ fun Plantilla_Horizontal_Diez(
         }
     }
 
-    LaunchedEffect(procesoVM.noticias_rss) {
-        println("Noticias RSS: ${procesoVM.noticias_rss}")
+    LaunchedEffect(true) {
+        procesoVM.activarClima()
+    }
+
+    DisposableEffect(true) {
+        onDispose {
+            procesoVM.detenerClima()
+        }
     }
 
     Row(
@@ -91,14 +104,14 @@ fun Plantilla_Horizontal_Diez(
             ) {
                 PHBarraLateralTres(procesoVM)
             }
-
+            // Componente de Clima
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .background(procesoVM.stateEveniment.color_primario)
             ) {
-
+                Clima(clima)
             }
 
         }

@@ -1,10 +1,12 @@
 package ita.tech.eveniment.data
 
 import ita.tech.eveniment.model.CalendarioResponse
+import ita.tech.eveniment.model.InformacionClimaModel
 import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RssResponse
 import ita.tech.eveniment.util.Constants.Companion.ALTA_DISPOSITIVO
+import ita.tech.eveniment.util.Constants.Companion.INFORMACION_CLIMA
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_PANTALLA
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_RECURSOS
 import ita.tech.eveniment.util.Constants.Companion.INFORMACION_RECURSOS_CALENDARIO
@@ -31,7 +33,7 @@ interface ApiEveniment {
 
     @FormUrlEncoded
     @POST(INFORMACION_RECURSOS)
-    suspend fun ontenerInformacionRecursos(
+    suspend fun obtenerInformacionRecursos(
         @Field("idPantalla") idPantalla: String,
         @Field("tipo_consulta") tipoConsulta: String,
         @Field("id_lista_reproduccion") idListaReproduccion: Int
@@ -39,7 +41,7 @@ interface ApiEveniment {
 
     @FormUrlEncoded
     @POST(INFORMACION_RECURSOS_CALENDARIO)
-    suspend fun ontenerInformacionRecursosCalendario(
+    suspend fun obtenerInformacionRecursosCalendario(
         @Field("idPantalla") idPantalla: String,
         @Field("tipo_consulta") tipoConsulta: String
     ): Response<CalendarioResponse>
@@ -50,4 +52,9 @@ interface ApiEveniment {
         @Field("idPantalla") idPantalla: String
     ): Response<RssResponse>
 
+    @FormUrlEncoded
+    @POST(INFORMACION_CLIMA)
+    suspend fun obtenerInformacionClima(
+        @Field("idPantalla") idPantalla: String
+    ): Response<InformacionClimaModel>
 }

@@ -1,12 +1,22 @@
 package ita.tech.eveniment.util
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import ita.tech.eveniment.R
 import ita.tech.eveniment.model.RecursoDePlaylist
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.DataOutputStream
 import java.io.IOException
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -126,5 +136,57 @@ fun obtener_path( path: String ): String{
 
     } catch (e: Exception) {
         return ""
+    }
+}
+
+fun quitarDecimal( numero: String? ): Int{
+    return numero?.toDoubleOrNull()?.toInt() ?: 0
+}
+
+fun formatearNombreImagen(ruta: String?): String {
+    if (ruta.isNullOrEmpty()) return "day_113"
+    return ruta.replace("/", "_").substringBeforeLast(".")
+}
+
+@SuppressLint("DiscouragedApi")
+fun obtieneIdImagen(context: Context, ruta: String? ): Int {
+    return context.resources.getIdentifier(ruta, "drawable", context.packageName)
+}
+
+@Composable
+fun iconClima(
+    nombreIcon: String,
+    context: Context,
+    modifier: Modifier = Modifier
+){
+    val nombreImagen = formatearNombreImagen(nombreIcon)
+    val idImagen = obtieneIdImagen(context, nombreImagen)
+    if(idImagen != 0){
+        Image(
+            painter = painterResource(id = idImagen),
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = ContentScale.Fit
+        )
+    }else{
+        Image(
+            painter = painterResource(id = R.drawable.day_113),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(0.7f),
+            contentScale = ContentScale.Fit
+        )
+    }
+}
+
+fun obtenerDiaAbreviado(fechaStr: String): String {
+    return try {
+        val fecha = LocalDate.parse(fechaStr)
+        val formatter = DateTimeFormatter.ofPattern("EEEE", Locale("es", "ES"))
+        fecha.format(formatter)
+            .lowercase() // Asegura que esté en minúsculas (ej. "miércoles")
+            .take(3)     // Toma solo "mié"
+    } catch (e: Exception) {
+        // En caso de que la fecha venga mal o vacía
+        "---"
     }
 }

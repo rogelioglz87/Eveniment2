@@ -28,6 +28,7 @@ import ita.tech.eveniment.model.CalendarioAlarmaDB
 import ita.tech.eveniment.model.InformacionPantallaDB
 import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionCalendarioModel
+import ita.tech.eveniment.model.InformacionClimaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RssEntry
 import ita.tech.eveniment.repository.CalendarioAlarmaRepository
@@ -122,6 +123,11 @@ class ProcesoViewModel @Inject constructor(
     // Variables para obtener noticias RSS
     var noticias_rss by mutableStateOf("")
         private set
+
+    // Variable para obtener el Clima
+    private var cronJobClima: Job? = null
+    private val _clima = MutableStateFlow<InformacionClimaModel?>(null)
+    val clima = _clima.asStateFlow()
 
     private val gson = Gson()
 
@@ -343,10 +349,11 @@ class ProcesoViewModel @Inject constructor(
         }
 
         //-- API RSS
-        if(stateInformacionPantalla.tipo_disenio == "10" ||
+        if(
+            stateInformacionPantalla.tipo_disenio == "10" ||
             stateInformacionPantalla.tipo_disenio == "13" ||
             stateInformacionPantalla.tipo_disenio == "14" ||
-            stateInformacionPantalla.tipo_disenio == "15"){
+            stateInformacionPantalla.tipo_disenio == "15" ){
             obtenerInformacionRss()
         }
 
@@ -561,8 +568,11 @@ class ProcesoViewModel @Inject constructor(
             obtenerInformacionPantalla()
 
             //-- API Rss
-            if(stateInformacionPantalla.tipo_disenio == "13" ||
-                stateInformacionPantalla.tipo_disenio == "14"){
+            if(
+                stateInformacionPantalla.tipo_disenio == "10" ||
+                stateInformacionPantalla.tipo_disenio == "13" ||
+                stateInformacionPantalla.tipo_disenio == "14" ||
+                stateInformacionPantalla.tipo_disenio == "15" ){
                 obtenerInformacionRss()
             }
 
@@ -1257,28 +1267,42 @@ class ProcesoViewModel @Inject constructor(
         cronJobTimer?.cancel()
         cronJobTimer = viewModelScope.launch(Dispatchers.Default) {
             while (true){
-                delay(5000) // 1000
                 val tiempoActual = setTimeZone( System.currentTimeMillis(), stateInformacionPantalla.time_zone )
 
                 if( fechaActualGeneral == null || fechaActualGeneral != tiempoActual.toLocalDate().toString() ){
                     fechaActualGeneral = tiempoActual.toLocalDate().toString()
                     fechaActualGeneralBand = true
                 }
-                withContext(Dispatchers.Main) {
+                // withContext(Dispatchers.Main) {
                     horaActual = formatTimeHora(tiempoActual)
                     if(fechaActualGeneralBand){
-                        println("***Actualizar fecha")
                         fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
                         fechaActualIngles = formatTimeFechaIngles(tiempoActual)
                         fechaActualGeneralBand = false
                     }
-                }
+                // }
+                delay(5000) // 1000
             }
         }
     }
 
     fun detenerTime(){
         cronJobTimer?.cancel()
+    }
+
+    fun activarClima(){
+        cronJobClima?.cancel()
+        cronJobClima = viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                obtenerInformacionClima()
+                // Cada 5 min.
+                delay(5 * 60 * 1000L)
+            }
+        }
+    }
+
+    fun detenerClima(){
+        cronJobClima?.cancel()
     }
 
     private fun determinaOrientacionPantalla(){
@@ -1318,7 +1342,7 @@ class ProcesoViewModel @Inject constructor(
                     )
                 )
             }else{
-                throw Exception("Respuesta de la red Nula.")
+                Log.w("ProcesoViewModel", "Respuesta de la red Nula.")
             }
         }catch (e: Exception){
             // Obtener informacion de manera Local
@@ -1334,6 +1358,19 @@ class ProcesoViewModel @Inject constructor(
         withContext(Dispatchers.Main){
             // Decodificar Mensaje
             noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
+        }
+    }
+
+    private suspend fun obtenerInformacionClima(){
+        try {
+            val result = repository.obtenerInformacionClima(stateEveniment.idDispositivo)
+            if (result != null) {
+                _clima.value = result
+            }else{
+                Log.w("ProcesoViewModel", "La respuesta del servicio del clima fue nula.")
+            }
+        }catch (e: Exception){
+            Log.e("ProcesoViewModel", "Fallo al obtener clima: ${e.message}", e)
         }
     }
 
