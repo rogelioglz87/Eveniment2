@@ -1,5 +1,6 @@
 package ita.tech.eveniment.views.plantillasHorizontales
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,7 @@ fun Plantilla_Horizontal_Cinco(
 ){
     val imgDefault = procesoVM.stateInformacionPantalla.nombreArchivo
     val timeZone = procesoVM.stateInformacionPantalla.time_zone
-    val estatusInternet = procesoVM.stateEveniment.estatusInternet
+    val estatusInternetNAS = procesoVM.stateEveniment.estatusInternetNAS
 
     // Variables para mostrar recursos NAS
     val id_evento = procesoVM.stateInformacionPantalla.id_evento
@@ -41,10 +42,10 @@ fun Plantilla_Horizontal_Cinco(
     var showNAS by remember { mutableStateOf(false) }
 
     //-- Detectamos si el estatus del Internet
-    LaunchedEffect(estatusInternet) {
+    LaunchedEffect(estatusInternetNAS) {
         // Validamos si es necesario mostrar un recurso de la NAS
         if( id_evento > 0 && recursos_nas.isNotEmpty() ){
-            if( !estatusInternet ){
+            if( !estatusInternetNAS ){
                 // Si el tiempo de desconexion es mayor al indicado por el usuario en la pantalla,
                 // mostrar el recurso (NAS) guardado en la pantalla
                 while (contador < tiempo_sin_internet){

@@ -32,7 +32,8 @@ fun Carrucel(
     recursosOrigin: List<InformacionRecursoModel>,
     imgDefault: String,
     timeZone: String,
-    onTipoSlideChange: (String) -> Unit
+    onTipoSlideChange: (String) -> Unit,
+    isOverlay: Boolean = false
 ){
     val context = LocalContext.current
 
@@ -135,10 +136,11 @@ fun Carrucel(
                     RecursoVideo(
                         recurso,
                         isCurrentlyVisible = (pagerState.currentPage == page),
-                        recursos.size
+                        recursos.size,
+                        isOverlay = isOverlay
                     )
                 } else if (recursos[page].tipo_slide == "cctv") {
-                    RecursoCCTV(path = recurso)
+                    RecursoCCTV(path = recurso, isOverlay = isOverlay)
                 } else if (recursos[page].tipo_slide == "pagina_web") {
                     RecursoWeb(url = recurso)
                 } else if (recursos[page].tipo_slide == "youtube" && (recursos[page].tipo_video_youtube == "video" || recursos[page].tipo_video_youtube == "en_directo")) {
@@ -150,7 +152,8 @@ fun Carrucel(
                         recurso,
                         recursos[page].recursos_nas,
                         isCurrentlyVisible = (pagerState.currentPage == page),
-                        recursos.size
+                        recursos.size,
+                        isOverlay = isOverlay
                     )
                 }
 

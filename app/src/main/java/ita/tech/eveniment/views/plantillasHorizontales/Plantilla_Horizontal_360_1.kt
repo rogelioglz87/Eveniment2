@@ -34,7 +34,7 @@ fun Plantilla_Horizontal_360_1(
 ){
     var columnWidth by remember { mutableStateOf(1.0f) }
     var tipoSlideActualPrincipal by remember { mutableStateOf("") }
-    val estatusInternet = procesoVM.stateEveniment.estatusInternet
+    val estatusInternetNAS = procesoVM.stateEveniment.estatusInternetNAS
 
     // --- NUEVO ESTADO ---
     // Creamos un estado para rastrear el anclaje.
@@ -64,10 +64,10 @@ fun Plantilla_Horizontal_360_1(
     }
 
     //-- Detectamos si el estatus del Internet
-    LaunchedEffect(estatusInternet) {
+    LaunchedEffect(estatusInternetNAS) {
         // Validamos si es necesario mostrar un recurso de la NAS
         if( id_evento > 0 && recursos_nas.isNotEmpty() ){
-            if( !estatusInternet ){
+            if( !estatusInternetNAS ){
                 // Si el tiempo de desconexion es mayor al indicado por el usuario en la pantalla,
                 // mostrar el recurso (NAS) guardado en la pantalla
                 while (contador < tiempo_sin_internet){

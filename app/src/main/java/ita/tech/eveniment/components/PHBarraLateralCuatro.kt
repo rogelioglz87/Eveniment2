@@ -1,5 +1,6 @@
 package ita.tech.eveniment.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,23 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
 
     var recargarPaginaWeb by remember {
         mutableStateOf(false)
+    }
+
+    // Inicia cronometro para actualizar la pagina
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Espera 1 hora (3,600,000 milisegundos)
+            delay(3600000L)
+            // Activamos la pantalla negra/recarga
+            recargarPaginaWeb = true
+
+            // Esperamos 2 segundos para asegurar que el WebView anterior
+            // se destruya completamente y libere la GPU
+            delay(2000L)
+
+            // Volvemos a mostrar el RecursoWeb (instancia nueva)
+            recargarPaginaWeb = false
+        }
     }
 
     // Recarga el componente d ela pagina web

@@ -2,13 +2,17 @@ package ita.tech.eveniment.components
 
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.SurfaceView
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -28,12 +32,12 @@ fun RecursoListaVideos(
     path: String,
     rutasDeVideos: String,
     isCurrentlyVisible: Boolean,
-    totalRecursos: Int = 0
+    totalRecursos: Int = 0,
+    isOverlay: Boolean = false
 ){
     val context = LocalContext.current
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build()
-    }
+    // val exoPlayer = remember { ExoPlayer.Builder(context).build() }
+    var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
 
     LaunchedEffect(isCurrentlyVisible) {
         val listaVideos = parseStringToObject(rutasDeVideos)
@@ -53,20 +57,25 @@ fun RecursoListaVideos(
 
         if(isCurrentlyVisible)
         {
-            exoPlayer.setMediaItems(mediaItems)
-            if(tipoReproduccion == "aleatorio"){
-                exoPlayer.shuffleModeEnabled = true
+            val newPlayer = ExoPlayer.Builder(context).build().apply {
+                setMediaItems(mediaItems)
+                if(tipoReproduccion == "aleatorio"){
+                    shuffleModeEnabled = true
+                }
+                prepare()
+                repeatMode = Player.REPEAT_MODE_ALL
+                playWhenReady = true
+                // play()
             }
-            exoPlayer.prepare()
-            exoPlayer.repeatMode = Player.REPEAT_MODE_ALL
-            exoPlayer.playWhenReady = true
-            exoPlayer.play()
+            exoPlayer = newPlayer
         }
         else
         {
-            exoPlayer.playWhenReady = false
-            exoPlayer.stop()
-            exoPlayer.clearMediaItems()
+            exoPlayer?.playWhenReady = false
+            exoPlayer?.stop()
+            exoPlayer?.clearMediaItems()
+            exoPlayer?.release()
+            exoPlayer = null
         }
 
     }
@@ -78,18 +87,34 @@ fun RecursoListaVideos(
         factory = { cont ->
             // Funciona con X98 mini Android 11 para el monitoreo
             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-            (view as PlayerView).apply {
+            val playerView = view as PlayerView
+
+            if( isOverlay ){
+                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                    setZOrderMediaOverlay(true)
+                }
+            }
+
+            playerView.apply {
                 player = exoPlayer
                 clipToOutline = true
             }
+        },
+        update = { view ->
+            view.player = exoPlayer
         }
     )
 
     DisposableEffect(Unit) {
         onDispose {
             println("*** Finaliza lista de videos")
-            exoPlayer.playWhenReady = false
-            exoPlayer.release()
+            exoPlayer?.playWhenReady = false
+            exoPlayer?.let {
+                it.stop()
+                it.clearMediaItems()
+                it.release()
+            }
+            exoPlayer = null
         }
     }
 

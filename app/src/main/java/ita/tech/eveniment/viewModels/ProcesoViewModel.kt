@@ -142,7 +142,7 @@ class ProcesoViewModel @Inject constructor(
     var recursosId = _recursosId
 
     //-- Variables de tiempo
-    private var cronJobTimer by mutableStateOf<Job?>(null)
+    private var cronJobTimer: Job? = null
     var horaActual by mutableStateOf("")
         private set
 
@@ -160,6 +160,10 @@ class ProcesoViewModel @Inject constructor(
     init{
         // Proceso que escucha la notificacion de la Alarma del Calendario
         notificarCalendario()
+    }
+
+    fun setNotificacionVPN( status: Boolean ){
+        stateEveniment = stateEveniment.copy(notificacionVPN = status)
     }
 
     /**
@@ -192,6 +196,9 @@ class ProcesoViewModel @Inject constructor(
     fun setEstatusInternet( status: Boolean ){
         stateEveniment = stateEveniment.copy( estatusInternet = status )
     }
+    fun setEstatusInternetNAS( status: Boolean ){
+        stateEveniment = stateEveniment.copy( estatusInternetNAS = status )
+    }
     private fun setMostrarCarrucel(estatus: Boolean ){
         stateEveniment = stateEveniment.copy( mostrarCarrucel = estatus )
     }
@@ -210,7 +217,7 @@ class ProcesoViewModel @Inject constructor(
 
             val creacionCarpetas: Boolean = crearDirectoriosGenerales()
             if (creacionCarpetas) {
-                withContext(Dispatchers.Main) { setEstatusCarpetas(true) } // Actualiza UI en Main thread
+                setEstatusCarpetas(true)
 
                 obtenerIdDevices()
                 obtenerIpAdress()
@@ -264,7 +271,7 @@ class ProcesoViewModel @Inject constructor(
                 folderImagenes.mkdirs()
             }
         } catch (e: FileNotFoundException){
-            println("Error: " + e.printStackTrace())
+            Log.e("ProcesoViewModel", "Error al crear directorios generales.")
         }
 
         if(folderEveniment.exists() && folderDatos.exists() && folderVideos.exists() && folderImagenes.exists()){
@@ -306,7 +313,7 @@ class ProcesoViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.d("ERROR IP DEVICES", e.message.toString())
+            Log.e("ERROR IP DEVICES", e.message.toString())
         }
     }
 
@@ -314,12 +321,10 @@ class ProcesoViewModel @Inject constructor(
         try {
             val result = repository.altaDispositivo(stateEveniment.idDispositivo, idCetroDefault)
             if (result == "1") {
-                withContext(Dispatchers.Main) {
-                    stateEveniment = stateEveniment.copy(altaDispositivo = true)
-                }
+                stateEveniment = stateEveniment.copy(altaDispositivo = true)
             }
         } catch (e: Exception) {
-            println(e.message)
+            Log.e("ProcesoViewModel", "${e.message}", e)
         }
     }
 
@@ -332,9 +337,7 @@ class ProcesoViewModel @Inject constructor(
         obtenerInformacionPantalla()
 
         // Obtenemos y convertimos los colores de la pantalla
-        withContext(Dispatchers.Main) {
-            convertirColoresPantalla()
-        }
+        convertirColoresPantalla()
 
         // Rotamos la pantalla en caso de ser necesario
         determinaOrientacionPantalla()
@@ -380,10 +383,8 @@ class ProcesoViewModel @Inject constructor(
         val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
 
         // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-        withContext(Dispatchers.Main) {
-            stateEveniment =
+        stateEveniment =
                 stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosPantalla.size + recursosDescargablesPlantilla.size)
-        }
 
         // Descargamos los recursos de pantalla
         // descargarArchivosPantalla(recursosPantalla)
@@ -415,13 +416,11 @@ class ProcesoViewModel @Inject constructor(
             borrarRecursos()
         }
 
-        withContext(Dispatchers.Main) {
-            stateEveniment = if (stateEveniment.totalRecursos > 0) {
-                stateEveniment.copy(bandInicioDescarga = true)
-            } else {
-                // Quitamos pantalla de Descarga
-                stateEveniment.copy(bandDescargaRecursos = false)
-            }
+        stateEveniment = if (stateEveniment.totalRecursos > 0) {
+            stateEveniment.copy(bandInicioDescarga = true)
+        } else {
+            // Quitamos pantalla de Descarga
+            stateEveniment.copy(bandDescargaRecursos = false)
         }
     }
 
@@ -562,7 +561,7 @@ class ProcesoViewModel @Inject constructor(
      */
     fun descargarInformacionPantalla(){
         viewModelScope.launch(Dispatchers.IO) {
-            withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+            setbandDescargaLbl(true)
 
             //-- API Descargamos recursos de la PANTALLA
             obtenerInformacionPantalla()
@@ -603,7 +602,7 @@ class ProcesoViewModel @Inject constructor(
             // Rotamos la pantalla en caso de ser necesario
             determinaOrientacionPantalla()
 
-            withContext(Dispatchers.Main) {
+
                 // Obtenemos y convertimos los colores de la pantalla
                 convertirColoresPantalla()
 
@@ -621,7 +620,6 @@ class ProcesoViewModel @Inject constructor(
                         resetCarrucel()
                     }
                 }
-            }
 
         }
     }
@@ -641,7 +639,7 @@ class ProcesoViewModel @Inject constructor(
     fun descargarInformacionListaReproduccion(){
         val self = this
         viewModelScope.launch (Dispatchers.IO) {
-            withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+            setbandDescargaLbl(true)
 
             // Actualizamos la informacion del dispositivo
             descargarInformacionPantallaLite()
@@ -674,9 +672,7 @@ class ProcesoViewModel @Inject constructor(
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
 
             // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-            withContext(Dispatchers.Main) {
-                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosDescargablesPlantilla.size)
-            }
+            stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosDescargablesPlantilla.size)
 
             // Descargamos los recursos
             descargarArchivos(recursosDescargables)
@@ -698,14 +694,12 @@ class ProcesoViewModel @Inject constructor(
             }
 
             // Indicamos el momento en que se inicia la descarga
-            withContext(Dispatchers.Main) {
-                if (stateEveniment.totalRecursos > 0) {
-                    stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
-                } else {
-                    // Quitamos etiqueta de Descarga
-                    stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
-                    resetCarrucel()
-                }
+            if (stateEveniment.totalRecursos > 0) {
+                stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
+            } else {
+                // Quitamos etiqueta de Descarga
+                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                resetCarrucel()
             }
         }
     }
@@ -722,7 +716,7 @@ class ProcesoViewModel @Inject constructor(
 
             if( idProgramacionAnterior != listaEnTurno.idProgramacion ){
                 // Mostramos etiqueta de descarga
-                withContext(Dispatchers.Main) { setbandDescargaLbl(true) }
+                setbandDescargaLbl(true)
 
                 calendarioActivo = listaEnTurno
                 _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
@@ -731,9 +725,7 @@ class ProcesoViewModel @Inject constructor(
                 val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
 
                 // Almacenamos el Total de recursos a descargar más los recursos de pantalla
-                withContext(Dispatchers.Main) {
-                    stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size)
-                }
+                stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size)
 
                 // Descargamos los recursos
                 descargarArchivos(recursosDescargables)
@@ -743,14 +735,12 @@ class ProcesoViewModel @Inject constructor(
                 }
 
                 // Indicamos el momento en que se inicia la descarga
-                withContext(Dispatchers.Main) {
-                    if (stateEveniment.totalRecursos > 0) {
-                        stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
-                    } else {
-                        // Quitamos etiqueta de Descarga
-                        stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
-                        resetCarrucel()
-                    }
+                if (stateEveniment.totalRecursos > 0) {
+                    stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
+                } else {
+                    // Quitamos etiqueta de Descarga
+                    stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                    resetCarrucel()
                 }
             }
         }
@@ -773,7 +763,7 @@ class ProcesoViewModel @Inject constructor(
                 )
             }else{
                 // La red respondio, pero sin datos, intentamos usar la BD.
-                throw Exception("Respuesta de la red Nula.")
+                Log.w("ProcesoViewModel", "Respuesta de la red Nula.")
             }
         } catch (e: Exception) {
 
@@ -784,7 +774,6 @@ class ProcesoViewModel @Inject constructor(
             }
         }
 
-        withContext(Dispatchers.Main) {
             stateInformacionPantalla = stateInformacionPantalla.copy(
                 centro = result?.centro ?: "",
                 subdominio = result?.subdominio ?: "",
@@ -826,9 +815,6 @@ class ProcesoViewModel @Inject constructor(
                 url_slide = result?.url_slide ?: "",
                 calendario_operativo = result?.calendario_operativo ?: ""
             )
-        }
-        
-
     }
 
     /**
@@ -1273,14 +1259,13 @@ class ProcesoViewModel @Inject constructor(
                     fechaActualGeneral = tiempoActual.toLocalDate().toString()
                     fechaActualGeneralBand = true
                 }
-                // withContext(Dispatchers.Main) {
-                    horaActual = formatTimeHora(tiempoActual)
-                    if(fechaActualGeneralBand){
-                        fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
-                        fechaActualIngles = formatTimeFechaIngles(tiempoActual)
-                        fechaActualGeneralBand = false
-                    }
-                // }
+
+                horaActual = formatTimeHora(tiempoActual)
+                if(fechaActualGeneralBand){
+                    fechaActualEspaniol = formatTimeFechaEspaniol(tiempoActual)
+                    fechaActualIngles = formatTimeFechaIngles(tiempoActual)
+                    fechaActualGeneralBand = false
+                }
                 delay(5000) // 1000
             }
         }
@@ -1355,10 +1340,8 @@ class ProcesoViewModel @Inject constructor(
 
         val textNoticias: String = obtenerInformacionRssTitle(tmpNoticiasRss)
 
-        withContext(Dispatchers.Main){
-            // Decodificar Mensaje
-            noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
-        }
+        // Decodificar Mensaje
+        noticias_rss = decoderTextRss(stateInformacionPantalla.rss_adicional) + "    •    " + textNoticias
     }
 
     private suspend fun obtenerInformacionClima(){

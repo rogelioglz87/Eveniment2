@@ -37,7 +37,7 @@ fun Plantilla_Horizontal_Once(
     var columnWidth by remember { mutableStateOf(1.0f) }
     var tipoSlideActualPrincipal by remember { mutableStateOf("") }
 
-    val estatusInternet = procesoVM.stateEveniment.estatusInternet
+    val estatusInternetNAS = procesoVM.stateEveniment.estatusInternetNAS
     // Variables para mostrar recursos NAS
     val id_evento = procesoVM.stateInformacionPantalla.id_evento
     val tiempo_sin_internet = procesoVM.stateInformacionPantalla.tiempo_sin_internet
@@ -46,10 +46,11 @@ fun Plantilla_Horizontal_Once(
     var showNAS by remember { mutableStateOf(false) }
 
     //-- Detectamos si el estatus del Internet
-    LaunchedEffect(estatusInternet) {
+    LaunchedEffect(estatusInternetNAS) {
+        Log.d("*** estatusInternetNAS", estatusInternetNAS.toString());
         // Validamos si es necesario mostrar un recurso de la NAS
         if( id_evento > 0 && recursos_nas.isNotEmpty() ){
-            if( !estatusInternet ){
+            if( !estatusInternetNAS ){
                 // Si el tiempo de desconexion es mayor al indicado por el usuario en la pantalla,
                 // mostrar el recurso (NAS) guardado en la pantalla
                 while (contador < tiempo_sin_internet){
@@ -140,11 +141,12 @@ fun Plantilla_Horizontal_Once(
                         procesoVM.stateInformacionPantalla.url_slide,
                         recursos_nas,
                         isCurrentlyVisible = true,
-                        1
+                        1,
+                        isOverlay = true
                     )
                 }
                 else{
-                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {}, isOverlay = true)
                 }
 
             }else{
