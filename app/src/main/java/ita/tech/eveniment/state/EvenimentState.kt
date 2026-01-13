@@ -8,6 +8,8 @@ data class EvenimentState(
     val ipVPN: String = "",
     val altaDispositivo: Boolean = false,
     val estatusInternet: Boolean = false,
+    val estatusInternetNAS: Boolean = false, // Detecta los cambio de internet sin importar el tiempo transcurrido
+    val notificacionVPN: Boolean = false,
 
     val totalRecursos: Int = 0,
     val totalRecursosDescargados: Int = 0,

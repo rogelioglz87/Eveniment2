@@ -3,6 +3,7 @@ package ita.tech.eveniment.components
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.SurfaceView
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(UnstableApi::class)
 @Composable
-fun RecursoCCTV(path: String){
+fun RecursoCCTV(path: String, isOverlay: Boolean = false){
     val context = LocalContext.current
     val paths = path.split("|")
     val composableScope = rememberCoroutineScope()
@@ -66,7 +67,15 @@ fun RecursoCCTV(path: String){
 
                 // Funciona con X98 mini Android 11 para el monitoreo
                 val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                (view as PlayerView).apply {
+                val playerView = view as PlayerView
+
+                if( isOverlay ){
+                    (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                        setZOrderMediaOverlay(true)
+                    }
+                }
+
+                playerView.apply {
                     player = players[0]
                     clipToOutline = true
                 }
@@ -93,12 +102,16 @@ fun RecursoCCTV(path: String){
                         .fillMaxWidth()
                         .fillMaxHeight(),
                     factory = { cont ->
-                        /* PlayerView(cont).apply {
-                            player = players[0]
-                            useController = false
-                        } */
                         val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                        (view as PlayerView).apply {
+                        val playerView = view as PlayerView
+
+                        if( isOverlay ){
+                            (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                setZOrderMediaOverlay(true)
+                            }
+                        }
+
+                        playerView.apply {
                             player = players[0]
                             clipToOutline = true
                         }
@@ -115,12 +128,16 @@ fun RecursoCCTV(path: String){
                         .fillMaxWidth()
                         .fillMaxHeight(),
                     factory = { cont ->
-                        /* PlayerView(cont).apply {
-                            player = players[1]
-                            useController = false
-                        } */
                         val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                        (view as PlayerView).apply {
+                        val playerView = view as PlayerView
+
+                        if( isOverlay ){
+                            (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                setZOrderMediaOverlay(true)
+                            }
+                        }
+
+                        playerView.apply {
                             player = players[1]
                             clipToOutline = true
                         }
@@ -150,13 +167,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[0]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[0]
                                 clipToOutline = true
                             }
@@ -173,13 +193,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[1]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[1]
                                 clipToOutline = true
                             }
@@ -202,13 +225,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[2]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[2]
                                 clipToOutline = true
                             }
@@ -244,13 +270,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[0]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[0]
                                 clipToOutline = true
                             }
@@ -267,13 +296,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[1]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[1]
                                 clipToOutline = true
                             }
@@ -296,13 +328,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[2]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[2]
                                 clipToOutline = true
                             }
@@ -319,13 +354,16 @@ fun RecursoCCTV(path: String){
                             .fillMaxWidth()
                             .fillMaxHeight(),
                         factory = { cont ->
-                            /* PlayerView(cont).apply {
-                                player = players[3]
-                                useController = false
-                                keepScreenOn = true
-                            } */
                             val view = LayoutInflater.from(cont).inflate(R.layout.reproductor, null, false)
-                            (view as PlayerView).apply {
+                            val playerView = view as PlayerView
+
+                            if( isOverlay ){
+                                (playerView.videoSurfaceView as? SurfaceView)?.apply {
+                                    setZOrderMediaOverlay(true)
+                                }
+                            }
+
+                            playerView.apply {
                                 player = players[3]
                                 clipToOutline = true
                             }

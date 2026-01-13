@@ -2,6 +2,7 @@ package ita.tech.eveniment.views
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -45,14 +46,12 @@ import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Ocho
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Siete
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Totem_1
 
-
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun HomeView(
     procesoVM: ProcesoViewModel,
     navController: NavController
 ) {
-
     val stateEveniment = procesoVM.stateEveniment
     val stateInformacionPantalla = procesoVM.stateInformacionPantalla
 
@@ -106,6 +105,19 @@ fun HomeView(
                 reiniciarAppBand = true;
             }
         }
+    }
+
+    // Si existe una conexión a la VPN reiniciamos componentes
+    // Se coloca esta bandera por que puede darse el caso de que primero inicie el Eveniment y despues la app de la VPN
+    LaunchedEffect( stateEveniment.notificacionVPN ) {
+        if( stateEveniment.notificacionVPN ){
+            // Conectamos el dispositivo al Socket
+            mSocket.emit("connected",stateEveniment.idDispositivo,stateEveniment.ipAddress)
+            procesoVM.descargarInformacionListaReproduccion()
+            procesoVM.descargarInformacionPantalla()
+            procesoVM.setNotificacionVPN( false )
+        }
+
     }
 
     LaunchedEffect(Unit) {

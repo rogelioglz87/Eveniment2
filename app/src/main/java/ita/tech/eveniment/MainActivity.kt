@@ -6,9 +6,11 @@ import android.app.Activity
 import android.app.UiModeManager
 import android.app.admin.DevicePolicyManager
 import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
@@ -16,6 +18,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -69,8 +73,8 @@ class MainActivity : ComponentActivity() {
     private var disconnectionTimestamp: Long = 0L // 0 significa que estamos conectados
 
     // Instancia de DevicePolicyManager y ComponentName
-    private lateinit var dpm: DevicePolicyManager // (SE COMENTA PARA ANDROID 14 TV)
-    private lateinit var adminComponent: ComponentName // (SE COMENTA PARA ANDROID 14 TV)
+    private lateinit var dpm: DevicePolicyManager
+    private lateinit var adminComponent: ComponentName
 
     val procesoVM: ProcesoViewModel by viewModels()
 
@@ -87,8 +91,8 @@ class MainActivity : ComponentActivity() {
         alarmaDeReinicioDispositivo(this)
 
         // -- Verificamos si somos "Device Owner" antes de intentar anclar la pantalla
-        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager // (SE COMENTA PARA ANDROID 14 TV)
-        adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java) // (SE COMENTA PARA ANDROID 14 TV)
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        adminComponent = ComponentName(this, MyDeviceAdminReceiver::class.java)
 
 
         // -- Inicia el Monitoreo de la App
@@ -110,8 +114,8 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(Settings.canDrawOverlays(context))
             }
 
-            // Estado para el permiso de administrador de dispositivo // (SE COMENTA PARA ANDROID 14 TV)
-            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) } // (SE COMENTA PARA ANDROID 14 TV)
+            // Estado para el permiso de administrador de dispositivo
+            var isAdminActive by remember { mutableStateOf(dpm.isAdminActive(adminComponent)) }
 
             /**
              * Permisos para la lectura de archivos Locales
@@ -138,24 +142,17 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // Launcher para el permiso de administrador de dispositivo (SE COMENTA PARA ANDROID 14 TV)
+            // Launcher para el permiso de administrador de dispositivo
             val deviceAdminLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                // Si Android es mayor o igual a 12 no solicitamos el modo Kiosco ni permisos de Administrador
-                // if (!esAndroid12) {
                     // Verificamos si el permiso de administrador se concedió después de la solicitud
                     isAdminActive = dpm.isAdminActive(adminComponent)
                     if (isAdminActive) {
                         // Si se concedió, anclamos la pantalla
                         startLockTask()
                     }
-                // }
             }
-
-            // if( esAndroid12 ) {
-                // isAdminActive = true
-            // }
 
             // Launcher para solicitar el permiso Overlay
             val overlayPermissionLauncher = rememberLauncherForActivityResult(
@@ -168,6 +165,8 @@ class MainActivity : ComponentActivity() {
             // Obtenemos una referencia a la Activity actual
             val activity = LocalContext.current as Activity
 
+            val actionVpnReady = "ita.tech.eveniment.VPN_CONECTADA"
+
             LaunchedEffect(Unit) {
                 // Escuchamos el evento de orientacion
                 procesoVM.eventoDeOrientacion.collect{ orientacion ->
@@ -177,8 +176,8 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(key1 = true) {
 
-                // Permiso: Administrador // (SE COMENTA PARA ANDROID 14 TV)
-                if ( !isAdminActive) { // !esAndroid12 &&
+                // Permiso: Administrador
+                if ( !isAdminActive) {
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                         putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
                         putExtra(
@@ -226,6 +225,10 @@ class MainActivity : ComponentActivity() {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe { connectivity ->
+                            // Logica para el estado de la conexion NAS
+                            procesoVM.setEstatusInternetNAS( connectivity )
+
+                            // Logica para el estado de la conexion
                             if( !connectivity ){
                                 if (disconnectionTimestamp == 0L) {
                                     procesoVM.setEstatusInternet(connectivity)
@@ -259,19 +262,32 @@ class MainActivity : ComponentActivity() {
             }
 
             DisposableEffect(Unit) {
+                //-- Logica del Socket
                 SocketHandler.setSocket()
                 SocketHandler.establishConnection()
+
+                //-- Escuchamos el Broadcast para el estatus de la VPN
+                val vpnReceiver = object : BroadcastReceiver(){
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        if (intent?.action == actionVpnReady){
+                            procesoVM.setNotificacionVPN( true )
+                        }
+                    }
+                }
+
+                val filter = IntentFilter(actionVpnReady)
+                ContextCompat.registerReceiver(context,vpnReceiver,filter,ContextCompat.RECEIVER_EXPORTED)
 
                 onDispose {
                     println("*** --- DESCONECTAR SOCKET Y ReactiveNetwork")
                     SocketHandler.closeConnection()
                     disposables.clear() // Desuscribe todos los observadores
+                    context.unregisterReceiver(vpnReceiver)
                 }
             }
 
             EvenimentTheme {
-                if (isAdminActive && permission && hasOverlayPermission) { // (SE COMENTA PARA ANDROID 14 TV)
-                // if (permission) {
+                if (isAdminActive && permission && hasOverlayPermission) {
                     NavManager(procesoVM)
                 }else {
                     // Muestra una pantalla de espera o de explicación si no hay permisos
@@ -304,8 +320,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
-                                // (SE COMENTA PARA ANDROID 14 TV)
-                                if (!isAdminActive) { // !esAndroid12 &&
+                                if (!isAdminActive) {
                                     val intent =
                                         Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                                             putExtra(

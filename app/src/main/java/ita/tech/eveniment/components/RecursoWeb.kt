@@ -54,9 +54,20 @@ fun RecursoWeb(url: String) {
                 // La línea clave que define la estrategia de caché
                 settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
 
+                // Quitar funciones para que no ocupe tanto CPU
+                settings.setSupportMultipleWindows(false)
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                this.isClickable = false
+                this.isFocusable = false
+                settings.offscreenPreRaster = false
+
+
                 // WebView settings
                 fitsSystemWindows = true
-                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                // setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
                 webViewInstance = this
             }

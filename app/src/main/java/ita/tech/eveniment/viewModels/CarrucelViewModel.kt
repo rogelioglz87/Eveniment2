@@ -22,7 +22,7 @@ class CarrucelViewModel: ViewModel() {
     private var stateCarrucel by mutableStateOf(CarrucelState())
         private set
 
-    var cronJob by mutableStateOf<Job?>(null)
+    var cronJob: Job? = null
         private set
 
     var tiempoTranscurrido by mutableStateOf(0L)
@@ -36,7 +36,7 @@ class CarrucelViewModel: ViewModel() {
     private val _listaFiltrada = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())
     val listaFiltrada = _listaFiltrada.asStateFlow()
 
-    private var listaJob by mutableStateOf<Job?>(null)
+    private var listaJob: Job? = null
 
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
