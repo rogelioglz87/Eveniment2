@@ -14,9 +14,10 @@ val Typography = Typography(
     bodyLarge = TextStyle(
         // fontFamily = FontFamily.Default,
         fontFamily = Font(R.font.avenir).toFontFamily(),
+        // fontFamily = Font(R.font.gayosso).toFontFamily(),
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 24.sp,
+        lineHeight = 24.sp, // 24.sp
         letterSpacing = 0.5.sp
     )
     /* Other default text styles to override

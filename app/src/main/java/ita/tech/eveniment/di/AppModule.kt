@@ -12,6 +12,7 @@ import ita.tech.eveniment.interceptor.Authentication
 import ita.tech.eveniment.room.CalendarioAlarmaDatabaseDao
 import ita.tech.eveniment.room.EvenimentDatabase
 import ita.tech.eveniment.room.InformacionPantallaDatabaseDao
+import ita.tech.eveniment.room.TextoAlarmaDatabaseDao
 import ita.tech.eveniment.util.Constants.Companion.AUTH_PASS
 import ita.tech.eveniment.util.Constants.Companion.AUTH_USER
 import ita.tech.eveniment.util.Constants.Companion.BASE_URL
@@ -65,6 +66,12 @@ object AppModule {
     @Provides
     fun providesCalendarioAlarmaDao( evenimentDatabase: EvenimentDatabase ): CalendarioAlarmaDatabaseDao{
         return evenimentDatabase.calendarioAlarmaDao()
+    }
+
+    @Singleton
+    @Provides
+    fun providesTextoAlarmaDao( evenimentDatabase: EvenimentDatabase ): TextoAlarmaDatabaseDao {
+        return evenimentDatabase.textoAlarmaDao()
     }
 
 }

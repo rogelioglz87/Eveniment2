@@ -1,6 +1,7 @@
 package ita.tech.eveniment.components
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.util.UnstableApi
 import ita.tech.eveniment.model.InformacionRecursoModel
+import ita.tech.eveniment.util.parseStringToObject
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import kotlinx.coroutines.launch
 
@@ -33,7 +35,10 @@ fun Carrucel(
     imgDefault: String,
     timeZone: String,
     onTipoSlideChange: (String) -> Unit,
-    isOverlay: Boolean = false
+    isOverlay: Boolean = false,
+    colorSecundario: Color = Color.Black,
+    textoAgrupado: String = "si",
+    plantilla: Int = 1
 ){
     val context = LocalContext.current
 
@@ -128,7 +133,8 @@ fun Carrucel(
                 */
             ) {
                 // Definimos el Tipo de recuso a mostrar (Imagen, Video, Youtube, Pagina Web etc...)
-                val recurso = recursos[page].datos.toString()
+                // val recurso = recursos[page].datos.toString()
+                var recurso = recursos[page].obtenerDatosComoString()
 
                 if (recursos[page].tipo_slide == "imagen") {
                     RecursoImagen(rutaImagen = recurso, context = context)
@@ -154,6 +160,13 @@ fun Carrucel(
                         isCurrentlyVisible = (pagerState.currentPage == page),
                         recursos.size,
                         isOverlay = isOverlay
+                    )
+                } else if(recursos[page].tipo_slide == "texto"){
+                    RecursoTexto(
+                        recursos = recursos[page].obtenerDatosComoListaAgenda(),
+                        colorSecundario = colorSecundario,
+                        textoAgrupado = textoAgrupado,
+                        plantilla = plantilla
                     )
                 }
 

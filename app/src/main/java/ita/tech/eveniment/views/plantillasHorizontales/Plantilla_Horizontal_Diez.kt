@@ -137,7 +137,16 @@ fun Plantilla_Horizontal_Diez(
                         )
                     }
                     else{
-                        Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                        Carrucel(
+                            recursos,
+                            imgDefault,
+                            timeZone,
+                            onTipoSlideChange = {},
+                            isOverlay = false,
+                            colorSecundario = procesoVM.stateEveniment.color_secundario,
+                            textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                            plantilla = 10
+                        )
                     }
                 } else {
                     Column(

@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import ita.tech.eveniment.util.Constants.Companion.MARCA_SIZE
+import ita.tech.eveniment.util.Constants.Companion.MEDIDAS
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_TITULO
 import ita.tech.eveniment.viewModels.ProcesoViewModel
@@ -34,6 +36,10 @@ fun PHBarraLateralUno(procesoVM: ProcesoViewModel) {
     val stateInformacionPantalla = procesoVM.stateInformacionPantalla
     val stateEveniment = procesoVM.stateEveniment
     val context = LocalContext.current
+
+    // Medidas
+    val tamanioLogo = MEDIDAS?.logo ?: 1.0f
+
 
     LaunchedEffect(true) {
         // Inicia el cron para obtener la Fecha Actual
@@ -60,7 +66,7 @@ fun PHBarraLateralUno(procesoVM: ProcesoViewModel) {
                 .crossfade(true)
                 .build(),
             contentDescription = "",
-            modifier = Modifier.fillMaxWidth(0.5f)
+            modifier = Modifier.fillMaxWidth(tamanioLogo) // 1.0f para tamaño 640x480
         )
     }
     Column(
@@ -90,13 +96,13 @@ fun PHBarraLateralUno(procesoVM: ProcesoViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(end = 10.dp, bottom = 10.dp)
+                .padding(end = 10.dp, bottom = 10.dp)  // pantalla: 1080p: 10, pantalla: 640x480: 5
         ) {
             Text(
                 text = "ita.tech",
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontSize = MARCA_SIZE.sp,
                 modifier = Modifier.align(Alignment.BottomEnd)
             )
         }

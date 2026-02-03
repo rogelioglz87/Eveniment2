@@ -23,6 +23,7 @@ import ita.tech.eveniment.components.Carrucel
 import ita.tech.eveniment.components.PHBarraLateralUno
 import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
+import ita.tech.eveniment.util.Constants.Companion.MEDIDAS
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.delay
 
@@ -41,6 +42,13 @@ fun Plantilla_Horizontal_Uno(
     val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
+
+    // Medidas
+    val plantilla = 1
+    val textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado
+    val barra = MEDIDAS?.plantillas?.get(plantilla)?.barra ?: 0.18f
+    val padding = (MEDIDAS?.plantillas?.get(plantilla)?.padding.toString().toIntOrNull() ?: 10).dp
+    val contenido = MEDIDAS?.plantillas?.get(plantilla)?.contenido ?: 0.82f
 
     //-- Detectamos si el estatus del Internet
     LaunchedEffect(estatusInternetNAS) {
@@ -71,16 +79,16 @@ fun Plantilla_Horizontal_Uno(
     ) {
         Column(
             modifier = Modifier
-                .weight(0.18f)
+                .weight(barra as Float)
                 .fillMaxHeight()
                 .background(color = procesoVM.stateEveniment.color_secundario) // Generan el borde al final de la barra
-                .padding(end = 10.dp)
+                .padding(end = padding)
         ) {
             PHBarraLateralUno(procesoVM)
         }
         Column(
             modifier = Modifier
-                .weight(0.82f)
+                .weight(contenido as Float)
                 .fillMaxHeight()
                 .background(Color.Black)
         ) {
@@ -95,7 +103,16 @@ fun Plantilla_Horizontal_Uno(
                     )
                 }
                 else{
-                    Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(
+                        recursos,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {},
+                        isOverlay = false,
+                        colorSecundario = procesoVM.stateEveniment.color_secundario,
+                        textoAgrupado = textoAgrupado,
+                        plantilla = plantilla
+                    )
                 }
             }else{
                 Column(

@@ -55,6 +55,10 @@ fun Plantilla_Horizontal_Catorce(
         mutableStateOf(false)
     }
 
+    // Medidas
+    val plantilla = 14
+    val textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado
+
     // Recarga el componente d ela pagina web
     LaunchedEffect(procesoVM.stateInformacionPantalla.url_pagina_web) {
         recargarPaginaWeb = true
@@ -144,7 +148,15 @@ fun Plantilla_Horizontal_Catorce(
                         )
                     }
                     else{
-                        Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                        Carrucel(
+                            recursos,
+                            imgDefault,
+                            timeZone, onTipoSlideChange = {},
+                            isOverlay = false,
+                            colorSecundario = procesoVM.stateEveniment.color_secundario,
+                            textoAgrupado = textoAgrupado,
+                            plantilla = plantilla
+                        )
                     }
                 } else {
                     Column(

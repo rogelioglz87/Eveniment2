@@ -94,7 +94,16 @@ fun Plantilla_Vertical_Siete(
                     )
                 }
                 else{
-                    Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(
+                        recursos,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {},
+                        isOverlay = false,
+                        colorSecundario = procesoVM.stateEveniment.color_secundario,
+                        textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                        plantilla = 7
+                    )
                 }
 
             }else{

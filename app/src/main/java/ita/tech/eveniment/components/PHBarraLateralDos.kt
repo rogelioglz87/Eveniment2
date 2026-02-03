@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import ita.tech.eveniment.util.Constants.Companion.MARCA_SIZE
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_TITULO
 import ita.tech.eveniment.util.Constants.Companion.P2_SIZE_FECHA
@@ -98,7 +99,7 @@ fun PHBarraLateralDos(procesoVM: ProcesoViewModel){
                 text = "ita.tech",
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontSize = MARCA_SIZE.sp,
                 modifier = Modifier.align(Alignment.BottomEnd)
             )
         }

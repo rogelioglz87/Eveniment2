@@ -87,7 +87,16 @@ fun Plantilla_Horizontal_Dos(
                     )
                 }
                 else{
-                    Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(
+                        recursos,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {},
+                        isOverlay = false,
+                        colorSecundario = procesoVM.stateEveniment.color_secundario,
+                        textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                        plantilla = 2
+                    )
                 }
 
             }else{

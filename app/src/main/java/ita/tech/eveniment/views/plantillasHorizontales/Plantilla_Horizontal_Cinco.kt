@@ -41,6 +41,10 @@ fun Plantilla_Horizontal_Cinco(
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
 
+    // Medidas
+    val plantilla = 5
+    val textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado
+
     //-- Detectamos si el estatus del Internet
     LaunchedEffect(estatusInternetNAS) {
         // Validamos si es necesario mostrar un recurso de la NAS
@@ -92,7 +96,16 @@ fun Plantilla_Horizontal_Cinco(
                 )
             }
             else{
-                Carrucel(recursos,imgDefault,timeZone,onTipoSlideChange = {})
+                Carrucel(
+                    recursos,
+                    imgDefault,
+                    timeZone,
+                    onTipoSlideChange = {},
+                    isOverlay = false,
+                    colorSecundario = procesoVM.stateEveniment.color_secundario,
+                    textoAgrupado = textoAgrupado,
+                    plantilla = plantilla
+                )
             }
             
         }else{
