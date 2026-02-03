@@ -97,10 +97,15 @@ fun Plantilla_Vertical_Totem_1(
                 .constrainAs(contenidoPrincipal) {}
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = { tipoSlide ->
-                    // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
-                    tipoSlideActualPrincipal = tipoSlide
-                })
+                Carrucel(
+                    recursos,
+                    imgDefault,
+                    timeZone,
+                    onTipoSlideChange = { tipoSlide ->
+                        // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
+                        tipoSlideActualPrincipal = tipoSlide
+                    }
+                )
             }else{
                 Column(
                     modifier = Modifier
@@ -131,7 +136,12 @@ fun Plantilla_Vertical_Totem_1(
                     )
                 }
                 else{
-                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(
+                        recursosPlantilla,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {}
+                    )
                 }
             }else{
                 Column(

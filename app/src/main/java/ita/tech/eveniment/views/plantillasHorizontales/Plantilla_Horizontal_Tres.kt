@@ -1,6 +1,5 @@
 package ita.tech.eveniment.views.plantillasHorizontales
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,10 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ita.tech.eveniment.components.Carrucel
 import ita.tech.eveniment.components.PHBarraLateralDos
-import ita.tech.eveniment.components.RecursoImagen
 import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.delay
 
@@ -95,7 +92,16 @@ fun Plantilla_Horizontal_Tres(
                     )
                 }
                 else{
-                    Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = {})
+                    Carrucel(
+                        recursos,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {},
+                        isOverlay = false,
+                        colorSecundario = procesoVM.stateEveniment.color_secundario,
+                        textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                        plantilla = 3
+                    )
                 }
 
             }else{

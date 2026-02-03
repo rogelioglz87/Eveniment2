@@ -110,10 +110,19 @@ fun Plantilla_Horizontal_Once(
                 .constrainAs(contenidoPrincipal) {}
         ) {
             if(procesoVM.stateEveniment.mostrarCarrucel){
-                Carrucel(recursos, imgDefault, timeZone, onTipoSlideChange = { tipoSlide ->
-                    // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
-                    tipoSlideActualPrincipal = tipoSlide
-                })
+                Carrucel(
+                    recursos,
+                    imgDefault,
+                    timeZone,
+                    onTipoSlideChange = { tipoSlide ->
+                        // Solo capturamos el tipo de slide en caso de que el carrucel sea el PRINCIPAL
+                        tipoSlideActualPrincipal = tipoSlide
+                    },
+                    isOverlay = false,
+                    colorSecundario = procesoVM.stateEveniment.color_secundario,
+                    textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                    plantilla = 11
+                )
             }else{
                 Column(
                     modifier = Modifier
@@ -146,7 +155,16 @@ fun Plantilla_Horizontal_Once(
                     )
                 }
                 else{
-                    Carrucel(recursosPlantilla, imgDefault, timeZone, onTipoSlideChange = {}, isOverlay = true)
+                    Carrucel(
+                        recursosPlantilla,
+                        imgDefault,
+                        timeZone,
+                        onTipoSlideChange = {},
+                        isOverlay = true,
+                        colorSecundario = procesoVM.stateEveniment.color_secundario,
+                        textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
+                        plantilla = 11
+                    )
                 }
 
             }else{

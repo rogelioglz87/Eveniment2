@@ -1,13 +1,11 @@
 package ita.tech.eveniment.viewModels
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.Application
 import android.app.DownloadManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Environment
@@ -18,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -31,9 +28,11 @@ import ita.tech.eveniment.model.InformacionCalendarioModel
 import ita.tech.eveniment.model.InformacionClimaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RssEntry
+import ita.tech.eveniment.model.extraerEventos
 import ita.tech.eveniment.repository.CalendarioAlarmaRepository
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.repository.InformacionPantallaRepository
+import ita.tech.eveniment.repository.TextoAlarmaRepository
 import ita.tech.eveniment.state.DescargaRecursosState
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
@@ -43,6 +42,7 @@ import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_DATOS
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_IMAGENES
 import ita.tech.eveniment.util.Constants.Companion.FOLDER_EVENIMENT_VIDEOS
 import ita.tech.eveniment.util.EmiteNotificacionCalendario
+import ita.tech.eveniment.util.EmiteNotificacionTexto
 import ita.tech.eveniment.util.alarmaCalendario
 import ita.tech.eveniment.util.alarmaCalendarioCancelar
 import ita.tech.eveniment.util.formatTimeFechaEspaniol
@@ -51,6 +51,7 @@ import ita.tech.eveniment.util.formatTimeHora
 import ita.tech.eveniment.util.obtenerValorAleatorio
 import ita.tech.eveniment.util.setTimeZone
 import ita.tech.eveniment.util.stringDateToZoneDateTime
+import ita.tech.eveniment.util.validaRecursosDeTexto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -59,19 +60,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.DataOutputStream
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Collections
@@ -83,7 +78,8 @@ class ProcesoViewModel @Inject constructor(
     application: Application,
     private val repository: EvenimentRepository,
     private val informacionPantallaRepository: InformacionPantallaRepository,
-    private val calendarioAlarmaRepository: CalendarioAlarmaRepository
+    private val calendarioAlarmaRepository: CalendarioAlarmaRepository,
+    private val textoAlarmaRepository: TextoAlarmaRepository,
     ) : AndroidViewModel(application) {
 
     @SuppressLint("StaticFieldLeak")
@@ -160,6 +156,8 @@ class ProcesoViewModel @Inject constructor(
     init{
         // Proceso que escucha la notificacion de la Alarma del Calendario
         notificarCalendario()
+        // Proceso que escucha la notificacion de la Alarma del Texto
+        notificarTexto()
     }
 
     fun setNotificacionVPN( status: Boolean ){
@@ -368,7 +366,8 @@ class ProcesoViewModel @Inject constructor(
             obtenerInformacionCalendario()
             //-- 2 Determinar la Lista de Reproduccion a mostrar
             this.calendarioActivo = obtenerListaReproduccion()
-            _recursos_tmp.value = this.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+            // _recursos_tmp.value = this.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+            _recursos_tmp.value = this.calendarioActivo?.extraerEventos()!!
         }
         else{
             // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
@@ -378,6 +377,9 @@ class ProcesoViewModel @Inject constructor(
             //-- API Descargamos recursos de la Lista de Reproduccion (PRINCIPAL)
             obtenerInformacionRecursos()
         }
+
+        // En caso de que la lista de Reproduccion tenga recursos de Texto se deben validar
+        revisaRecursosTexto()
 
         // Obtenemos los recursos descargables.
         val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -448,7 +450,8 @@ class ProcesoViewModel @Inject constructor(
         if( stateInformacionPantalla.tipo_fuente_eventos == "calendario" ){
             val calendarioListas = mutableListOf<InformacionRecursoModel>()
             calendario.value.forEach { evento ->
-                val listaRecursosTmp = evento.eventos.values.toList()
+                // val listaRecursosTmp = evento.eventos.values.toList()
+                val listaRecursosTmp = evento?.extraerEventos()!!
                 calendarioListas += listaRecursosTmp.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
             }
             listaRecursos = calendarioListas
@@ -474,7 +477,8 @@ class ProcesoViewModel @Inject constructor(
                 bandBorrar = true
                 run loop@{
                     listaCompletaUnica.forEach { recurso ->
-                        if (archivo == obtenerNombreUrl(recurso.datos.toString())) {
+                        // if (archivo == obtenerNombreUrl(recurso.datos.toString())) {
+                        if (archivo == obtenerNombreUrl(recurso.obtenerDatosComoString())) {
                             bandBorrar = false
                             return@loop
                         }
@@ -497,7 +501,8 @@ class ProcesoViewModel @Inject constructor(
                 bandBorrar = true
                 run loop@{
                     listaCompletaUnica.forEach { recurso ->
-                        if( archivo == obtenerNombreUrl( recurso.datos.toString() ) ){
+                        // if( archivo == obtenerNombreUrl( recurso.datos.toString() ) ){
+                        if( archivo == obtenerNombreUrl( recurso.obtenerDatosComoString() ) ){
                             bandBorrar = false
                             return@loop
                         }
@@ -657,7 +662,8 @@ class ProcesoViewModel @Inject constructor(
                 obtenerInformacionCalendario()
                 //-- 2 Determinar la Lista de Reproduccion a mostrar
                 self.calendarioActivo = obtenerListaReproduccion()
-                _recursos_tmp.value = self.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+                // _recursos_tmp.value = self.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
+                _recursos_tmp.value = self.calendarioActivo?.extraerEventos()!!
             }
             else{
                 // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
@@ -667,6 +673,9 @@ class ProcesoViewModel @Inject constructor(
                 //-- API Descargamos recursos de la LISTA DE REPRODUCCION
                 obtenerInformacionRecursos()
             }
+
+            // Validamos los recursos de Texto
+            revisaRecursosTexto()
 
             // Obtenemos los recursos descargables.
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -719,7 +728,11 @@ class ProcesoViewModel @Inject constructor(
                 setbandDescargaLbl(true)
 
                 calendarioActivo = listaEnTurno
-                _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
+                // _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
+                _recursos_tmp.value = listaEnTurno?.extraerEventos()!!
+
+                // Analizamos si la lista contiene recursos de Textos
+                revisaRecursosTexto()
 
                 // Obtenemos los recursos descargables.
                 val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -858,9 +871,7 @@ class ProcesoViewModel @Inject constructor(
                 stateEveniment.idDispositivo,
                 stateInformacionPantalla.tipo_fuente_eventos
             )
-
             calendario.value = result ?: emptyList()
-
             informacionPantallaRepository.clear("informacionCalendario")
             informacionPantallaRepository.insert(
                 InformacionPantallaDB(
@@ -980,7 +991,8 @@ class ProcesoViewModel @Inject constructor(
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach{ recurso ->
                 val ruta: String = if (recurso.tipo_slide=="imagen") FOLDER_EVENIMENT_IMAGENES else FOLDER_EVENIMENT_VIDEOS
-                val recursoNombre: String = obtenerNombreUrl( recurso.datos.toString() )
+                // val recursoNombre: String = obtenerNombreUrl( recurso.datos.toString() )
+                val recursoNombre: String = obtenerNombreUrl( recurso.obtenerDatosComoString() )
                 val archivo = File("$ruta/$recursoNombre")
                 if( !archivo.exists() )
                 {
@@ -1004,7 +1016,8 @@ class ProcesoViewModel @Inject constructor(
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach{ recurso ->
                 val carpeta: String = if (recurso.tipo_slide=="imagen") "Imagenes" else "Videos"
-                val recursoDatos: String = recurso.datos.toString()
+                // val recursoDatos: String = recurso.datos.toString()
+                val recursoDatos: String = recurso.obtenerDatosComoString()
                 val recursoNombre: String = obtenerNombreUrl( recursoDatos )
 
                 // Descarga de recursos
@@ -1161,6 +1174,18 @@ class ProcesoViewModel @Inject constructor(
     }
 
     /**
+     * Borra las alarmas programadas para el Texto
+     */
+    private suspend fun borrarAlarmasTexto(){
+        val listaAlarmas = textoAlarmaRepository.getInformacion().first()
+        if( listaAlarmas.isNotEmpty() ){
+            listaAlarmas.forEach { alarma ->
+                alarmaCalendarioCancelar(context, alarma.alarmaId)
+            }
+        }
+    }
+
+    /**
      * Obtiene el nombre de una imagen/video apartir de la URL
      */
     private fun obtenerNombreUrl(url: String): String{
@@ -1175,11 +1200,14 @@ class ProcesoViewModel @Inject constructor(
         val nuevaListaRecursos = mutableListOf<InformacionRecursoModel>()
         if(_recursos_tmp.value.isNotEmpty()){
             _recursos_tmp.value.forEach{ recurso ->
-                val recursoDatosNombre = obtenerNombreUrl( recurso.datos.toString() )
+                // val recursoDatosNombre = obtenerNombreUrl( recurso.datos.toString() )
+                val recursoDatosNombre = obtenerNombreUrl( recurso.obtenerDatosComoString() )
                 if(recurso.tipo_slide=="imagen"){
-                    recurso.datos = "$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre"
+                    // recurso.datos = "$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre"
+                    recurso.actualizarValorDatos("$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre")
                 }else if(recurso.tipo_slide=="video"){
-                    recurso.datos = "$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre"
+                    // recurso.datos = "$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre"
+                    recurso.actualizarValorDatos("$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre")
                 }
                 nuevaListaRecursos.add( recurso )
             }
@@ -1191,11 +1219,14 @@ class ProcesoViewModel @Inject constructor(
         val nuevaListaRecursos = mutableListOf<InformacionRecursoModel>()
         if(_recursos_plantilla_tmp.value.isNotEmpty()){
             _recursos_plantilla_tmp.value.forEach{ recurso ->
-                val recursoDatosNombre = obtenerNombreUrl( recurso.datos.toString() )
+                // val recursoDatosNombre = obtenerNombreUrl( recurso.datos.toString() )
+                val recursoDatosNombre = obtenerNombreUrl( recurso.obtenerDatosComoString() )
                 if(recurso.tipo_slide=="imagen"){
-                    recurso.datos = "$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre"
+                    // recurso.datos = "$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre"
+                    recurso.actualizarValorDatos("$FOLDER_EVENIMENT_IMAGENES/$recursoDatosNombre")
                 }else if(recurso.tipo_slide=="video"){
-                    recurso.datos = "$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre"
+                    // recurso.datos = "$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre"
+                    recurso.actualizarValorDatos("$FOLDER_EVENIMENT_VIDEOS/$recursoDatosNombre")
                 }
                 nuevaListaRecursos.add( recurso )
             }
@@ -1413,6 +1444,17 @@ class ProcesoViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Valida si existe una notificacion de Texto
+     */
+    private fun notificarTexto(){
+        viewModelScope.launch(Dispatchers.IO) {
+            EmiteNotificacionTexto.notificacion.collect{
+                descargarInformacionListaReproduccion()
+            }
+        }
+    }
+
     fun reiniciarDispositivo(){
         /* NO FUNCIONA EN ANDROID 9 */
         /*
@@ -1452,6 +1494,25 @@ class ProcesoViewModel @Inject constructor(
             Log.e("Reboot", "La app no es Device Owner, no se puede reiniciar.")
         }
 
+    }
+
+    /**
+     * En caso de que la lista de Reproduccion tenga recursos de Texto se deben validar
+     */
+    private suspend fun revisaRecursosTexto(){
+        // Borra las Alertas de Texto
+        borrarAlarmasTexto()
+        textoAlarmaRepository.delete()
+
+        val recursoTexto = validaRecursosDeTexto(
+            recursos =_recursos_tmp.value,
+            textoAgrupado = stateInformacionPantalla.eventos_texto_agrupado,
+            timeZone = stateInformacionPantalla.time_zone,
+            textoAlarmaRepository = textoAlarmaRepository,
+            context
+        )
+
+        _recursos_tmp.value = recursoTexto
     }
 
 }

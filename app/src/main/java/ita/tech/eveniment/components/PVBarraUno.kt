@@ -26,6 +26,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import ita.tech.eveniment.util.Constants.Companion.P2_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.P2_SIZE_TITULO
+import ita.tech.eveniment.util.Constants.Companion.PBV_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.PBV_SIZE_TITULO
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 
@@ -88,9 +89,9 @@ fun PVBarraUno(procesoVM: ProcesoViewModel){
                 Spacer(modifier = Modifier.height(13.dp))
 
                 // "Miércoles, 03 de Septiembre" procesoVM.fechaActualEspaniol
-                Text(text = procesoVM.fechaActualEspaniol, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P2_SIZE_FECHA.sp)
+                Text(text = procesoVM.fechaActualEspaniol, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = PBV_SIZE_FECHA.sp)
                 // Wednesday, 03 September procesoVM.fechaActualIngles
-                Text(text = procesoVM.fechaActualIngles, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = P2_SIZE_FECHA.sp)
+                Text(text = procesoVM.fechaActualIngles, color = stateEveniment.color_texto, fontWeight = FontWeight.Bold, fontSize = PBV_SIZE_FECHA.sp)
             }
         }
         Box(

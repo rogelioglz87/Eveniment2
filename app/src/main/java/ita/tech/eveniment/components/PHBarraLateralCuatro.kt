@@ -33,6 +33,10 @@ import coil3.request.crossfade
 import ita.tech.eveniment.util.Constants.Companion.P14_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_FECHA
 import ita.tech.eveniment.util.Constants.Companion.P1_SIZE_TITULO
+import ita.tech.eveniment.util.Constants.Companion.PBV4_SIZE_ESPACIO1
+import ita.tech.eveniment.util.Constants.Companion.PBV4_SIZE_ESPACIO2
+import ita.tech.eveniment.util.Constants.Companion.PBV4_SIZE_FECHA
+import ita.tech.eveniment.util.Constants.Companion.PBV4_SIZE_TITULO
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.delay
 
@@ -127,48 +131,43 @@ fun PHBarraLateralCuatro(procesoVM: ProcesoViewModel){
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            Spacer(modifier = Modifier.size(7.dp)) // 20.dp
+            Spacer(modifier = Modifier.size(PBV4_SIZE_ESPACIO1.dp)) // 7
             Text(
                 text = stateInformacionPantalla.textoLibre,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = P1_SIZE_TITULO.sp
+                fontSize = PBV4_SIZE_TITULO.sp
             )
+            Spacer(modifier = Modifier.height(PBV4_SIZE_ESPACIO1.dp)) // 13
 
-            Spacer(modifier = Modifier.height(13.dp)) // 15.dp
             Text(
                 text = stateInformacionPantalla.tituloCentro,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = P1_SIZE_TITULO.sp
+                fontSize = PBV4_SIZE_TITULO.sp
             )
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(PBV4_SIZE_ESPACIO2.dp)) // 5
             Text(
                 text = stateInformacionPantalla.centro,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = P1_SIZE_TITULO.sp
+                fontSize = PBV4_SIZE_TITULO.sp
             )
-            Spacer(modifier = Modifier.height(18.dp)) // 60.dp
+            Spacer(modifier = Modifier.height(PBV4_SIZE_ESPACIO1.dp)) // 18
+
             Text(
                 text = procesoVM.horaActual,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = P1_SIZE_TITULO.sp
+                fontSize = PBV4_SIZE_TITULO.sp
             )
-            Spacer(modifier = Modifier.height(4.dp)) // 15.dp
+            Spacer(modifier = Modifier.height(PBV4_SIZE_ESPACIO2.dp)) // 4
             Text(
                 text = procesoVM.fechaActualEspaniol,
                 color = stateEveniment.color_texto,
                 fontWeight = FontWeight.Bold,
-                fontSize = P14_SIZE_FECHA.sp
+                fontSize = PBV4_SIZE_FECHA.sp
             )
-            /*Text(
-                text = procesoVM.fechaActualIngles,
-                color = stateEveniment.color_texto,
-                fontWeight = FontWeight.Bold,
-                fontSize = P14_SIZE_FECHA.sp
-            )*/
 
             Box(
                 modifier = Modifier

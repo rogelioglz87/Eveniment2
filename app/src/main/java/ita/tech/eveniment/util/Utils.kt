@@ -3,6 +3,7 @@ package ita.tech.eveniment.util
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -10,7 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import ita.tech.eveniment.R
+import ita.tech.eveniment.model.DatosAgenda
+import ita.tech.eveniment.model.InformacionRecursoModel
 import ita.tech.eveniment.model.RecursoDePlaylist
+import ita.tech.eveniment.model.TextoAlarmaDB
+import ita.tech.eveniment.repository.TextoAlarmaRepository
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.DataOutputStream
@@ -22,6 +27,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.collections.mutableListOf
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -29,6 +35,8 @@ private val random = Random
 private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
 private val formatoFechaEspaniol = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES"))
 private val formatoFechaIngles = DateTimeFormatter.ofPattern("EEEE, dd MMMM", Locale.ENGLISH)
+// Formato de fechas recibida
+private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 /**
  * Obtiene un numero aleatorio de un rango dado
@@ -189,4 +197,99 @@ fun obtenerDiaAbreviado(fechaStr: String): String {
         // En caso de que la fecha venga mal o vacía
         "---"
     }
+}
+
+/**
+ * Valida si se deben de mostrar o no los recursos de Texto
+ * Reglas:
+ * 1. Si la Fecha Inicio es MAYOR a la Fecha Actual, no mostrar, agendar para mostrar recurso.
+ * 2. Si la Fecha Termino es MENOR a la Fecha Actual, no mostrar.
+ * 3. Mostrar recurso si la Fecha Actual esta entre la Fecha Inicio y Fecha Termino, agendar para borrar recurso.
+ * 4. Reagrupar recursos en caso de ser necesario
+ */
+suspend fun validaRecursosDeTexto(
+    recursos: List<InformacionRecursoModel>,
+    textoAgrupado: String = "si",
+    timeZone: String,
+    textoAlarmaRepository: TextoAlarmaRepository,
+    context: Context
+): List<InformacionRecursoModel>
+{
+    val nuevaListaRecursos = mutableListOf<InformacionRecursoModel>()
+    val fechaActual = setTimeZone( System.currentTimeMillis(), timeZone )
+    val listaEventosPermitidos = mutableListOf<DatosAgenda>()
+
+    // Inicia proceso de validar recursos de Texto
+    if( recursos.isNotEmpty() ){
+        recursos.forEach { recurso ->
+            if( recurso.tipo_slide == "texto" ){
+                // Obtenemos la lista de los Eventos
+                val eventos = recurso.obtenerDatosComoListaAgenda()
+                if(eventos.isNotEmpty()){
+                    eventos.forEachIndexed { index, evento ->
+
+                        val valorAleatorio = obtenerValorAleatorio(1000,1999);
+                        val idAlarma = "$index${valorAleatorio}".toInt()
+
+                        val fechaInicio = stringDateToZoneDateTime(evento.fechas?.fecha_ini.toString(), formatter, timeZone)
+                        val fechaTermino = stringDateToZoneDateTime(evento.fechas?.fecha_fin.toString(), formatter, timeZone)
+
+                        // Evento MAYOR a la Fecha Actual
+                        if(fechaInicio?.isAfter(fechaActual) ?: false){
+                            // Crear alarma para mostrar el recurso (Va a ejecutar un metodo para validar de nuevo)
+                            alarmaCalendario(context, fechaInicio, idAlarma, "TEXTO")
+                            textoAlarmaRepository.insert(TextoAlarmaDB( alarmaId = idAlarma ))
+                        }
+
+                        // Obtenemos los recursos permitidos
+                        else if( fechaActual.isAfter(fechaInicio) && fechaActual.isBefore(fechaTermino) ){
+                            listaEventosPermitidos.add( evento )
+                            // Crear alarma para borrar el recurso (Va a ejecutar un metodo para validar de nuevo)
+                            alarmaCalendario(context, fechaTermino, idAlarma, "TEXTO")
+                            textoAlarmaRepository.insert(TextoAlarmaDB( alarmaId = idAlarma ))
+                        }
+                    }
+                }
+
+                // Vaciamos la lista de Eventos
+                recurso.eliminarDatoAgenda()
+            }
+        }
+    }
+    // Reorganizamos eventos de Texto
+    if( recursos.isNotEmpty() ){
+        recursos.forEach { recurso ->
+
+            if( recurso.tipo_slide == "texto" && listaEventosPermitidos.isNotEmpty() ){
+                if( textoAgrupado == "si" ){
+                    // Agregar eventos permitidos
+                    var contador = 0
+                    for ( i in 0..2 ){
+                        if( i in listaEventosPermitidos.indices ){
+                            recurso.agregarDatoAgenda(listaEventosPermitidos[contador])
+                            contador++
+                        }
+                    }
+
+                    // Eliminamos eventos ya agregados (Al eliminar los valores el indice del arreglo se inicializa)
+                    listaEventosPermitidos.subList(0, contador).clear() // Se coloca contador para que elimine los 3 primeros
+                }else{
+                    if( listaEventosPermitidos.isNotEmpty() ){
+                        // Agrega evento permitido
+                        recurso.agregarDatoAgenda(listaEventosPermitidos[0]) // Toma el primer elemento
+
+                        // Eliminamos eventos ya agregados (Al eliminar los valores el indice del arreglo se inicializa)
+                        listaEventosPermitidos.removeAt(0) // Elimina el primer elemento
+                    }
+                }
+
+                // Guardamos el recurso
+                nuevaListaRecursos.add(recurso)
+
+            }else if( recurso.tipo_slide != "texto" ){
+                nuevaListaRecursos.add(recurso)
+            }
+        }
+    }
+    return nuevaListaRecursos
 }
