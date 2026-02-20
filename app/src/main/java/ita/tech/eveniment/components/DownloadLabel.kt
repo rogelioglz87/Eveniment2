@@ -9,7 +9,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import ita.tech.eveniment.broadcast.DescargarReceiver
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +31,7 @@ fun DownloadLabel(procesoVM: ProcesoViewModel){
             // procesoVM.recursosId,
             procesoVM.stateEveniment.totalRecursos,
             onComplete = {
+                println("---- Descarga COMPLETA")
                 procesoVM.sustituyeUrlPorPathLocal()
                 procesoVM.sustituyeUrlPorPathLocalPlantilla()
                 procesoVM.sustituyeUrlPorPathLocalPantalla()

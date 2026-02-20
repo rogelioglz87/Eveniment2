@@ -94,7 +94,8 @@ fun Plantilla_Vertical_Ocho(
                         isOverlay = false,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                        plantilla = 8
+                        plantilla = 8,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
 

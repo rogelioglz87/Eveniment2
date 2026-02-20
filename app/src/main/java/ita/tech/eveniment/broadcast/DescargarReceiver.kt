@@ -39,7 +39,8 @@ class DescargarReceiver(
                         if(status == DownloadManager.STATUS_SUCCESSFUL) {
                             println("---- Descarga exitosa: $id")
                             onRecursoDescargado()
-                            if( totalRecursos == recursosDescargados ){
+                            println("---- Descarga recursosDescargados: $recursosDescargados")
+                            if( totalRecursos >= recursosDescargados ){
                                 onComplete()
 
                                 // Volvemos a inciarel contador para que ingrese a la funcion "onComplete" en una descarga posterior.

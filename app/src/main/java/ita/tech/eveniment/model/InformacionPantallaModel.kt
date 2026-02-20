@@ -40,6 +40,7 @@ data class InformacionPantallaModel(
     val tiempo_sin_internet: Int,
     val recursos_nas: String,
     val url_slide: String,
-    val calendario_operativo: String
+    val calendario_operativo: String,
+    val zoom_youtube: Boolean
 
 )

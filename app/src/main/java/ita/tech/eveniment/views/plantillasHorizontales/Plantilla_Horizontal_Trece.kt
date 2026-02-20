@@ -119,7 +119,8 @@ fun Plantilla_Horizontal_Trece(
                     isOverlay = false,
                     colorSecundario = procesoVM.stateEveniment.color_secundario,
                     textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                    plantilla = 13
+                    plantilla = 13,
+                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                 )
             }
             else{
@@ -162,7 +163,8 @@ fun Plantilla_Horizontal_Trece(
                         isOverlay = true,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                        plantilla = 13
+                        plantilla = 13,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
 

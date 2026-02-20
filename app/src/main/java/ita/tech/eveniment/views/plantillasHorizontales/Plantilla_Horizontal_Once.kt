@@ -121,7 +121,8 @@ fun Plantilla_Horizontal_Once(
                     isOverlay = false,
                     colorSecundario = procesoVM.stateEveniment.color_secundario,
                     textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                    plantilla = 11
+                    plantilla = 11,
+                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                 )
             }else{
                 Column(

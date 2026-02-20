@@ -102,7 +102,8 @@ fun Plantilla_Vertical_Siete(
                         isOverlay = false,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                        plantilla = 7
+                        plantilla = 7,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
 

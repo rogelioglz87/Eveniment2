@@ -87,7 +87,8 @@ fun Plantilla_Vertical_Nueve(
                     isOverlay = false,
                     colorSecundario = procesoVM.stateEveniment.color_secundario,
                     textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                    plantilla = 9
+                    plantilla = 9,
+                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                 )
             }
 

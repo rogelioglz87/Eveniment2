@@ -100,7 +100,8 @@ fun Plantilla_Horizontal_Tres(
                         isOverlay = false,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                        plantilla = 3
+                        plantilla = 3,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
 

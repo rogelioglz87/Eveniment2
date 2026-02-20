@@ -111,7 +111,8 @@ fun Plantilla_Horizontal_Uno(
                         isOverlay = false,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = textoAgrupado,
-                        plantilla = plantilla
+                        plantilla = plantilla,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
             }else{

@@ -38,7 +38,8 @@ fun Carrucel(
     isOverlay: Boolean = false,
     colorSecundario: Color = Color.Black,
     textoAgrupado: String = "si",
-    plantilla: Int = 1
+    plantilla: Int = 1,
+    zoom_youtube: Boolean = false
 ){
     val context = LocalContext.current
 
@@ -107,6 +108,7 @@ fun Carrucel(
     if (recursos.isNotEmpty()) {
         HorizontalPager(
             state = pagerState,
+            key = { page -> recursos[page].idEvento }
         ) { page ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -115,22 +117,6 @@ fun Carrucel(
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .background(color = Color.Black)
-                // Aplica el efecto de fade con graphicsLayer
-                /*
-                .graphicsLayer {
-                    // Calcula el desplazamiento de la página
-                    val pageOffset = pagerState.currentPage - page + pagerState.currentPageOffsetFraction
-                    // Calcula el valor alfa para el efecto de fade
-                    val alpha = lerp(
-                        start = 0f, // Opacidad mínima
-                        stop = 1f,    // Opacidad máxima
-                        fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
-                    )
-
-                    // Aplica la opacidad a la página
-                    this.alpha = alpha
-                }
-                */
             ) {
                 // Definimos el Tipo de recuso a mostrar (Imagen, Video, Youtube, Pagina Web etc...)
                 // val recurso = recursos[page].datos.toString()
@@ -150,9 +136,9 @@ fun Carrucel(
                 } else if (recursos[page].tipo_slide == "pagina_web") {
                     RecursoWeb(url = recurso)
                 } else if (recursos[page].tipo_slide == "youtube" && (recursos[page].tipo_video_youtube == "video" || recursos[page].tipo_video_youtube == "en_directo")) {
-                    RecursoYouTube(videoId = recurso)
+                    RecursoYouTube(videoId = recurso, zoom_youtube)
                 } else if (recursos[page].tipo_slide == "youtube" && recursos[page].tipo_video_youtube == "lista_reproduccion") {
-                    RecursoYouTubeLista(recurso)
+                    RecursoYouTubeLista(recurso, zoom_youtube)
                 } else if (recursos[page].tipo_slide == "nas") {
                     RecursoListaVideos(
                         recurso,
@@ -167,6 +153,12 @@ fun Carrucel(
                         colorSecundario = colorSecundario,
                         textoAgrupado = textoAgrupado,
                         plantilla = plantilla
+                    )
+                } else if(recursos[page].tipo_slide == "powerbi"){
+                    RecursoPBI(
+                        embedUrl = recurso,
+                        embedToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InNNMV95QXhWOEdWNHlOLUI2ajJ4em1pazVBbyIsImtpZCI6InNNMV95QXhWOEdWNHlOLUI2ajJ4em1pazVBbyJ9.eyJhdWQiOiJodHRwczovL2FuYWx5c2lzLndpbmRvd3MubmV0L3Bvd2VyYmkvYXBpIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvM2NjMzBmNzktZTg0YS00YzQyLTk5NTQtOWMxZjczZDIxNjU3LyIsImlhdCI6MTc3MTYwNjg4NywibmJmIjoxNzcxNjA2ODg3LCJleHAiOjE3NzE2MTIwNTcsImFjY3QiOjAsImFjciI6IjEiLCJhaW8iOiJBWlFBYS84YkFBQUFQUUJORlVFSGozNlJ5ZVl2bWpIbmRHT3F6cU9tZDc2MEpyRHgyK054T09wMmVuL3lzbmNLUUxucXZtZ1ZVOTd0Y0RyMkMzTHE4R3c4Q0U1cFpGL3cwZVQ3YUZHMUhHK0l0SCsxSXd3aDI0Uk5kMUFuQW1TTFdFSDlnajR5MG8vYWVXa1htaDd2NTZYeHNCWitNenZxeFJ2VXhXRm9KUlNqUmpiRklrRDFURWJTcDcvM2xZNTNpTkZyd0t1ZE4wL1giLCJhbXIiOlsicHdkIiwibWZhIl0sImFwcGlkIjoiMGZiMGI0ZTgtMjg2ZC00M2E5LWJhOGUtYzc5ODc1ZDE4ZmU3IiwiYXBwaWRhY3IiOiIxIiwiZmFtaWx5X25hbWUiOiJHb256YWxleiBSb21lcm8iLCJnaXZlbl9uYW1lIjoiUm9nZWxpbyIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjE4OS4yMzUuMTg4Ljk1IiwibmFtZSI6IlJvZ2VsaW8gR29uemFsZXogUm9tZXJvIiwib2lkIjoiZjdmNjYwMzYtMjAxYi00ZGU5LTlhZDQtNTNmYWE0N2RhZTEzIiwicHVpZCI6IjEwMDMyMDA1OEIwRjcwMDUiLCJyaCI6IjEuQVN3QWVRX0RQRXJvUWt5WlZKd2ZjOUlXVndrQUFBQUFBQUFBd0FBQUFBQUFBQUFCQU5jc0FBLiIsInNjcCI6IlBhZ2luYXRlZFJlcG9ydC5SZWFkLkFsbCBSZXBvcnQuUmVhZC5BbGwgV29ya3NwYWNlLlJlYWQuQWxsIiwic2lkIjoiMDAxZmViZmEtNWY4MS0xYWNiLTY4OTQtM2I0NjgwNWM5M2QxIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoiVVFuVDFaV1BHZWdOREUyRmF4RlE0bG9ycDZlY01iZ3Y1dnh1dEY5SE1hYyIsInRpZCI6IjNjYzMwZjc5LWU4NGEtNGM0Mi05OTU0LTljMWY3M2QyMTY1NyIsInVuaXF1ZV9uYW1lIjoicmdvbnphbGV6QGl0YXZhbnphZGEub25taWNyb3NvZnQuY29tIiwidXBuIjoicmdvbnphbGV6QGl0YXZhbnphZGEub25taWNyb3NvZnQuY29tIiwidXRpIjoiT3o3amp4Vkk1MFNGUHEtTV9MSWFBQSIsInZlciI6IjEuMCIsIndpZHMiOlsiNjJlOTAzOTQtNjlmNS00MjM3LTkxOTAtMDEyMTc3MTQ1ZTEwIiwiYjc5ZmJmNGQtM2VmOS00Njg5LTgxNDMtNzZiMTk0ZTg1NTA5Il0sInhtc19hY3RfZmN0IjoiMyA5IiwieG1zX2Z0ZCI6InNBeHM0aDVXRW5LcFBVSzV2NVVUUlJBTk1Ka0pWZ2lyNmpHelBvd1RIQThCZFhOdWIzSjBhQzFrYzIxeiIsInhtc19pZHJlbCI6IjEgMiIsInhtc19zdWJfZmN0IjoiOCAzIn0.eaTIJHO7iG2XuoDLUqo4nB-bHtPUBFIPCdYDarSE5zWDNa38TLCm3KkyANz43am3yuZLHZruzfrPzODrQ-wuDgNuFi9K3ofFhorMnOOZOlf7bvQNY2LQkX93RRRZDEEANFprEuraXhR5xKUjrzHugG6ef8bU5_T-eCn9cGtH5xxeu7BbXsfXUTVrFYAZncHpZvWY7Sa4gNQAJ-NsU-Ggay-G2q4uuA8HO5MXz2F8_ICloTrCfxoT2hlzxzdCjgPAxLVTPgEKzlJfkQYJvT9z0rl_1vHY5Vf8ebiw7Nf22pZI8R28P2T94tv5mtDziLltKH2p1WJY1fgykzzzu9QnQw",
+                        reportId = recursos[page].id_reporte_powerbi,
                     )
                 }
 

@@ -145,7 +145,8 @@ fun Plantilla_Horizontal_Diez(
                             isOverlay = false,
                             colorSecundario = procesoVM.stateEveniment.color_secundario,
                             textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                            plantilla = 10
+                            plantilla = 10,
+                            zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                         )
                     }
                 } else {
