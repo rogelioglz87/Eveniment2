@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="powerbi.min.js"></script>
+    <style>
+        body, html, #reportContainer {
+            height: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            background-color: transparent; /* O el color de tu fondo */
+        }
+        #reportContainer {
+            border: none !important;
+            outline: none !important;
+        }
+        iframe {
+            border: none !important;
+            outline: none !important;
+        }
+    </style>
+</head>
+<body>
+<div id="reportContainer"></div>
+<script>
+    function loadReport(embedUrl, embedToken, reportId) {
+        var config = {
+            type: 'report',
+            tokenType: 0,
+            accessToken: embedToken,
+            embedUrl: embedUrl,
+            id: reportId,
+            settings: {
+                filterPaneEnabled: false,
+                navContentPaneEnabled: false,
+                displayOption: 2, // 2 = FitToWidth
+            }
+        };
+
+        var container = document.getElementById('reportContainer');
+
+        // powerbi.embed(container, config);
+
+        // 1. Carga la estructura (rápido)
+        var report = powerbi.load(container, config);
+
+        // 2. Cuando esté listo, renderiza los datos
+        report.on("loaded", function () {
+            report.render();
+        });
+    }
+
+    /**
+      * Limpieza para evitar fugas de memoria al cambiar de slide
+      */
+    function resetReport() {
+        const container = document.getElementById('reportContainer');
+        powerbi.reset(container);
+    }
+
+    /**
+     * Pre-carga los recursos de Power BI
+     * Se llama apenas el WebView está listo, sin esperar al token.
+     */
+    function preloadReport() {
+        const models = powerbi.models;
+        const config = {
+            type: 'report',
+            settings: {
+                layoutType: models.LayoutType.Master
+            }
+        };
+
+        // Esto descarga la maquinaria de Power BI en segundo plano
+        powerbi.preload(config);
+    }
+</script>
+</body>
+</html>

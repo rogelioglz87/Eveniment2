@@ -22,7 +22,8 @@ data class InformacionRecursoModel(
     val prioridad: String,
     val fecha_ini: String,
     val fecha_fin: String,
-    val recursos_nas: String
+    val recursos_nas: String,
+    val id_reporte_powerbi: String
 ){
     // Opción A: Intentar obtenerlo como String simple
     fun obtenerDatosComoString(): String {

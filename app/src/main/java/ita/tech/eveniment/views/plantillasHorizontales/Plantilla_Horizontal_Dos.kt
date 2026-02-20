@@ -95,7 +95,8 @@ fun Plantilla_Horizontal_Dos(
                         isOverlay = false,
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
-                        plantilla = 2
+                        plantilla = 2,
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
                     )
                 }
 

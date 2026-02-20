@@ -683,6 +683,15 @@ class ProcesoViewModel @Inject constructor(
             // Almacenamos el Total de recursos a descargar más los recursos de pantalla
             stateEveniment = stateEveniment.copy(totalRecursos = recursosDescargables.size + recursosDescargablesPlantilla.size)
 
+            // Indicamos el momento en que se inicia la descarga
+            if (stateEveniment.totalRecursos > 0) {
+                stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
+            } else {
+                // Quitamos etiqueta de Descarga
+                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
+                resetCarrucel()
+            }
+
             // Descargamos los recursos
             descargarArchivos(recursosDescargables)
             if(recursosDescargables.isEmpty()){
@@ -702,14 +711,7 @@ class ProcesoViewModel @Inject constructor(
                 borrarRecursosListaReproduccion()
             }
 
-            // Indicamos el momento en que se inicia la descarga
-            if (stateEveniment.totalRecursos > 0) {
-                stateEveniment = stateEveniment.copy(bandInicioDescarga = true)
-            } else {
-                // Quitamos etiqueta de Descarga
-                stateEveniment = stateEveniment.copy(bandDescargaLbl = false)
-                resetCarrucel()
-            }
+
         }
     }
 
@@ -826,7 +828,8 @@ class ProcesoViewModel @Inject constructor(
                 tiempo_sin_internet = result?.tiempo_sin_internet ?: 0,
                 recursos_nas = result?.recursos_nas ?: "",
                 url_slide = result?.url_slide ?: "",
-                calendario_operativo = result?.calendario_operativo ?: ""
+                calendario_operativo = result?.calendario_operativo ?: "",
+                zoom_youtube = result?.zoom_youtube ?: false
             )
     }
 
