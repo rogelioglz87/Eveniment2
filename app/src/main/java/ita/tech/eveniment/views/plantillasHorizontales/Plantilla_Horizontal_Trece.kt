@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,6 +52,8 @@ fun Plantilla_Horizontal_Trece(
     val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
+
+    val tokensPBI by procesoVM.tokensMap.collectAsState()
 
     LaunchedEffect(tipoSlideActualPrincipal) {
         Log.d("*** TIPO SLIDE", tipoSlideActualPrincipal);
@@ -120,7 +123,9 @@ fun Plantilla_Horizontal_Trece(
                     colorSecundario = procesoVM.stateEveniment.color_secundario,
                     textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
                     plantilla = 13,
-                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                    tokensPBI = tokensPBI,
+                    pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                 )
             }
             else{
@@ -164,7 +169,9 @@ fun Plantilla_Horizontal_Trece(
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
                         plantilla = 13,
-                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                        tokensPBI = tokensPBI,
+                        pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                     )
                 }
 

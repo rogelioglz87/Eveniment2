@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,8 @@ fun Plantilla_Horizontal_Doce(
     val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
+
+    val tokensPBI by procesoVM.tokensMap.collectAsState()
 
     LaunchedEffect(tipoSlideActualPrincipal) {
         Log.d("*** TIPO SLIDE", tipoSlideActualPrincipal);
@@ -112,7 +115,9 @@ fun Plantilla_Horizontal_Doce(
                     colorSecundario = procesoVM.stateEveniment.color_secundario,
                     textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
                     plantilla = 12,
-                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                    zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                    tokensPBI = tokensPBI,
+                    pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                 )
             }else{
                 Column(
@@ -155,7 +160,9 @@ fun Plantilla_Horizontal_Doce(
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
                         plantilla = 12,
-                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                        tokensPBI = tokensPBI,
+                        pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                     )
                 }
             }else{

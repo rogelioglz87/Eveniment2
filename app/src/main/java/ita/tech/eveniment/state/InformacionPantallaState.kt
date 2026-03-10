@@ -40,5 +40,6 @@ data class InformacionPantallaState(
     val recursos_nas: String = "",
     val url_slide: String = "",
     val calendario_operativo: String = "",
-    val zoom_youtube: Boolean = false
+    val zoom_youtube: Boolean = false,
+    val pbi_configuracion: String = "user"
 )

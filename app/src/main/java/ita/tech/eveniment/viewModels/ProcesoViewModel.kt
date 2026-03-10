@@ -14,6 +14,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,12 +28,16 @@ import ita.tech.eveniment.model.InformacionPantallaModel
 import ita.tech.eveniment.model.InformacionCalendarioModel
 import ita.tech.eveniment.model.InformacionClimaModel
 import ita.tech.eveniment.model.InformacionRecursoModel
+import ita.tech.eveniment.model.ReporteTokenPBIDB
 import ita.tech.eveniment.model.RssEntry
+import ita.tech.eveniment.model.UsuarioTokenPBIDB
 import ita.tech.eveniment.model.extraerEventos
 import ita.tech.eveniment.repository.CalendarioAlarmaRepository
 import ita.tech.eveniment.repository.EvenimentRepository
 import ita.tech.eveniment.repository.InformacionPantallaRepository
+import ita.tech.eveniment.repository.ReporteTokenPBIRepository
 import ita.tech.eveniment.repository.TextoAlarmaRepository
+import ita.tech.eveniment.repository.UsuarioTokenPBIRepository
 import ita.tech.eveniment.state.DescargaRecursosState
 import ita.tech.eveniment.state.EvenimentState
 import ita.tech.eveniment.state.InformacionPantallaState
@@ -53,16 +58,22 @@ import ita.tech.eveniment.util.setTimeZone
 import ita.tech.eveniment.util.stringDateToZoneDateTime
 import ita.tech.eveniment.util.validaRecursosDeTexto
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.InetAddress
@@ -71,6 +82,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Collections
 import javax.inject.Inject
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 
 @HiltViewModel
@@ -80,6 +93,8 @@ class ProcesoViewModel @Inject constructor(
     private val informacionPantallaRepository: InformacionPantallaRepository,
     private val calendarioAlarmaRepository: CalendarioAlarmaRepository,
     private val textoAlarmaRepository: TextoAlarmaRepository,
+    private val usuarioTokenPBIRepository: UsuarioTokenPBIRepository,
+    private val reporteTokenPBIRepository: ReporteTokenPBIRepository
     ) : AndroidViewModel(application) {
 
     @SuppressLint("StaticFieldLeak")
@@ -153,9 +168,31 @@ class ProcesoViewModel @Inject constructor(
     // Formato de fechas recibida
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
+    // Tokens Power BI
+    // Dependera del Metodo configurado: APP/USER OWNS DATA
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val tokensMap: StateFlow<Map<Long, String>> = snapshotFlow { stateInformacionPantalla.pbi_configuracion }
+        .flatMapLatest { config ->
+            if (config == "user") {
+                usuarioTokenPBIRepository.getInformacion().map { list ->
+                    list.associate { it.idUsuario to it.token }
+                }
+            } else {
+                reporteTokenPBIRepository.getInformacion().map { list ->
+                    list.associate { it.idReporte to it.token }
+                }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyMap()
+        )
+    
     init{
         // Proceso que escucha la notificacion de la Alarma del Calendario
         notificarCalendario()
+
         // Proceso que escucha la notificacion de la Alarma del Texto
         notificarTexto()
     }
@@ -209,25 +246,33 @@ class ProcesoViewModel @Inject constructor(
      * Inicializa la app de forma asincrona
      */
     fun initializeApplication() {
-        viewModelScope.launch(Dispatchers.IO) { // Toda esta lógica se ejecuta en un hilo IO
-            delay(2000)
-            Log.d(" ProcesoViewModel", "Iniciando initializeApplication")
+        viewModelScope.launch { // Toda esta lógica se ejecuta en un hilo IO
+            try{
+                withContext(Dispatchers.IO) {
+                    delay(2000)
+                    val creacionCarpetas: Boolean = crearDirectoriosGenerales()
+                    if (creacionCarpetas) {
+                        setEstatusCarpetas(true)
 
-            val creacionCarpetas: Boolean = crearDirectoriosGenerales()
-            if (creacionCarpetas) {
-                setEstatusCarpetas(true)
+                        obtenerIdDevices()
+                        obtenerIpAdress()
+                        altaDispositivo(CENTRO_DEFAULT)
+                        descargarInformacion() // Esto ya lanza su propia coroutine con IO
 
-                obtenerIdDevices()
-                obtenerIpAdress()
-                altaDispositivo(CENTRO_DEFAULT)
-                descargarInformacion() // Esto ya lanza su propia coroutine con IO
+                        _isAppInitialized.value = true
+                        Log.d("ProcesoViewModel", "Aplicación inicializada completamente.")
 
-                _isAppInitialized.value = true
-                Log.d("ProcesoViewModel", "Aplicación inicializada completamente.")
-
-            } else {
-                Log.e("ProcesoViewModel", "Error al crear directorios generales. No se pudo inicializar la app.")
-                // Aquí podrías manejar un error, por ejemplo, mostrando un mensaje al usuario
+                    } else {
+                        Log.e(
+                            "ProcesoViewModel",
+                            "Error al crear directorios generales. No se pudo inicializar la app."
+                        )
+                    }
+                }
+                // Carga los Tokens de Power BI
+                // cargarTokensDesdeBD()
+            } catch (e: Exception){
+                Log.e("ProcesoViewModel", "${e.message}")
             }
         }
     }
@@ -367,7 +412,7 @@ class ProcesoViewModel @Inject constructor(
             //-- 2 Determinar la Lista de Reproduccion a mostrar
             this.calendarioActivo = obtenerListaReproduccion()
             // _recursos_tmp.value = this.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
-            _recursos_tmp.value = this.calendarioActivo?.extraerEventos()!!
+            _recursos_tmp.value = this.calendarioActivo?.extraerEventos() ?: emptyList()
         }
         else{
             // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
@@ -380,6 +425,9 @@ class ProcesoViewModel @Inject constructor(
 
         // En caso de que la lista de Reproduccion tenga recursos de Texto se deben validar
         revisaRecursosTexto()
+
+        // Analizamos si la lista contiene recursos de Power BI
+        revisaRecursosPBI( _recursos_tmp.value, _recursos_plantilla_tmp.value )
 
         // Obtenemos los recursos descargables.
         val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -451,7 +499,7 @@ class ProcesoViewModel @Inject constructor(
             val calendarioListas = mutableListOf<InformacionRecursoModel>()
             calendario.value.forEach { evento ->
                 // val listaRecursosTmp = evento.eventos.values.toList()
-                val listaRecursosTmp = evento?.extraerEventos()!!
+                val listaRecursosTmp = evento?.extraerEventos() ?: emptyList()
                 calendarioListas += listaRecursosTmp.filter { it.tipo_slide == "video" || it.tipo_slide == "imagen" }
             }
             listaRecursos = calendarioListas
@@ -663,7 +711,8 @@ class ProcesoViewModel @Inject constructor(
                 //-- 2 Determinar la Lista de Reproduccion a mostrar
                 self.calendarioActivo = obtenerListaReproduccion()
                 // _recursos_tmp.value = self.calendarioActivo?.eventos?.values?.toList() ?: emptyList()
-                _recursos_tmp.value = self.calendarioActivo?.extraerEventos()!!
+                _recursos_tmp.value = self.calendarioActivo?.extraerEventos() ?: emptyList()
+
             }
             else{
                 // Borrar Alarmas del Calendario en caso de que se hayan programado con anterioridad
@@ -676,6 +725,9 @@ class ProcesoViewModel @Inject constructor(
 
             // Validamos los recursos de Texto
             revisaRecursosTexto()
+
+            // Analizamos si la lista contiene recursos de Power BI
+            revisaRecursosPBI( _recursos_tmp.value, _recursos_plantilla_tmp.value )
 
             // Obtenemos los recursos descargables.
             val recursosDescargables: List<InformacionRecursoModel> = obtenerRecursosDescargables(_recursos_tmp)
@@ -731,7 +783,7 @@ class ProcesoViewModel @Inject constructor(
 
                 calendarioActivo = listaEnTurno
                 // _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
-                _recursos_tmp.value = listaEnTurno?.extraerEventos()!!
+                _recursos_tmp.value = listaEnTurno?.extraerEventos() ?: emptyList()
 
                 // Analizamos si la lista contiene recursos de Textos
                 revisaRecursosTexto()
@@ -788,7 +840,6 @@ class ProcesoViewModel @Inject constructor(
                 result = gson.fromJson(informacionLocal.valor, InformacionPantallaModel::class.java)
             }
         }
-
             stateInformacionPantalla = stateInformacionPantalla.copy(
                 centro = result?.centro ?: "",
                 subdominio = result?.subdominio ?: "",
@@ -829,7 +880,8 @@ class ProcesoViewModel @Inject constructor(
                 recursos_nas = result?.recursos_nas ?: "",
                 url_slide = result?.url_slide ?: "",
                 calendario_operativo = result?.calendario_operativo ?: "",
-                zoom_youtube = result?.zoom_youtube ?: false
+                zoom_youtube = result?.zoom_youtube ?: false,
+                pbi_configuracion = result?.pbi_configuracion ?: "user",
             )
     }
 
@@ -1092,7 +1144,8 @@ class ProcesoViewModel @Inject constructor(
 
                         // Validamos prioridad
                         if (calendarioEvento != null) {
-                            if( evento.prioridad_horario >= calendarioEvento!!.prioridad_horario ){
+                            val prioridadTmp = calendarioEvento?.prioridad_horario ?: 0
+                            if( evento.prioridad_horario >= prioridadTmp ){
                                 calendarioEvento = evento
                             }
                         }else{
@@ -1146,7 +1199,8 @@ class ProcesoViewModel @Inject constructor(
 
                         // Validamos prioridad
                         if (calendarioEvento != null) {
-                            if( evento.prioridad_horario >= calendarioEvento!!.prioridad_horario ){
+                            val prioridadTmp = calendarioEvento?.prioridad_horario ?: 0
+                            if( evento.prioridad_horario >= prioridadTmp ){
                                 calendarioEvento = evento
                             }
                         }else{
@@ -1518,4 +1572,95 @@ class ProcesoViewModel @Inject constructor(
         _recursos_tmp.value = recursoTexto
     }
 
+    /**
+     * En caso de que la lista de Reproduccion tenga recursos de PBI se debe almacenar el Usuario/Reporte y Token.
+     * Considerar la lista normal y la lista que se le puede asignar a una plantilla.
+     */
+    private suspend fun revisaRecursosPBI( recursos: List<InformacionRecursoModel>, recursosPlantilla: List<InformacionRecursoModel> ){
+        val todosLosRecursos = recursos + recursosPlantilla
+        if( stateInformacionPantalla.pbi_configuracion == "user" ){
+            revisaRecursosPBIUser( todosLosRecursos )
+        }else{
+            revisaRecursosPBIApp( todosLosRecursos )
+        }
+    }
+
+    private suspend fun revisaRecursosPBIUser( recursos: List<InformacionRecursoModel> ){
+        // 1. Filtramos y creamos el mapa de IDs únicos
+        val tokensUnicos = recursos
+            .filter { it.tipo_slide == "powerbi" }
+            .associateBy({ it.id_usuario }, { it.pbi_user_token })
+
+        // Si no hay nada que procesar, salimos
+        if (tokensUnicos.isEmpty()) {
+            usuarioTokenPBIRepository.delete()
+            return
+        }
+
+        // 2. Operación de base de datos
+        usuarioTokenPBIRepository.delete()
+
+        // 3. Inserción masiva
+        tokensUnicos.forEach { (idUsuario, token) ->
+            usuarioTokenPBIRepository.insert(
+                UsuarioTokenPBIDB(
+                    idUsuario = idUsuario.toLong(),
+                    token = token
+                )
+            )
+        }
+    }
+
+    private suspend fun revisaRecursosPBIApp( recursos: List<InformacionRecursoModel> ){
+        // 1. Filtramos y creamos el mapa de IDs únicos
+        val tokensUnicos = recursos
+            .filter { it.tipo_slide == "powerbi" }
+            .associateBy({ it.idEvento }, { it.token_powerbi })
+
+        // Si no hay nada que procesar, salimos
+        if (tokensUnicos.isEmpty()) {
+            reporteTokenPBIRepository.delete()
+            return
+        }
+
+        // 2. Operación de base de datos
+        reporteTokenPBIRepository.delete()
+
+        // 3. Inserción masiva
+        tokensUnicos.forEach { (idReporte, token) ->
+            reporteTokenPBIRepository.insert(
+                ReporteTokenPBIDB(
+                    idReporte = idReporte.toLong(),
+                    token = token
+                )
+            )
+        }
+    }
+
+    /**
+     * Actualiza el Token del Usuario/Reporte, encaso de no existir lo crea
+     */
+    fun actualizarTokenPBI( clave: String, token: String ){
+        viewModelScope.launch {
+            if (clave.isNotEmpty() && token.isNotEmpty()) {
+                if( stateInformacionPantalla.pbi_configuracion == "user" ){
+                    usuarioTokenPBIRepository.upsert(
+                        UsuarioTokenPBIDB(
+                            idUsuario = clave.toLong(),
+                            token = token
+                        )
+                    )
+                }
+                else{
+                    reporteTokenPBIRepository.upsert(
+                        ReporteTokenPBIDB(
+                            idReporte = clave.toLong(),
+                            token = token
+                        )
+                    )
+                }
+
+            }
+        }
+    }
 }

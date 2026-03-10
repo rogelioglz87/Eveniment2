@@ -12,7 +12,9 @@ import ita.tech.eveniment.interceptor.Authentication
 import ita.tech.eveniment.room.CalendarioAlarmaDatabaseDao
 import ita.tech.eveniment.room.EvenimentDatabase
 import ita.tech.eveniment.room.InformacionPantallaDatabaseDao
+import ita.tech.eveniment.room.ReporteTokenPBIDatabaseDao
 import ita.tech.eveniment.room.TextoAlarmaDatabaseDao
+import ita.tech.eveniment.room.UsuarioTokenPBIDatabaseDao
 import ita.tech.eveniment.util.Constants.Companion.AUTH_PASS
 import ita.tech.eveniment.util.Constants.Companion.AUTH_USER
 import ita.tech.eveniment.util.Constants.Companion.BASE_URL
@@ -72,6 +74,18 @@ object AppModule {
     @Provides
     fun providesTextoAlarmaDao( evenimentDatabase: EvenimentDatabase ): TextoAlarmaDatabaseDao {
         return evenimentDatabase.textoAlarmaDao()
+    }
+
+    @Singleton
+    @Provides
+    fun providesUsuarioTokenPBIDao( evenimentDatabase: EvenimentDatabase ): UsuarioTokenPBIDatabaseDao {
+        return evenimentDatabase.usuarioTokenPBIDao()
+    }
+
+    @Singleton
+    @Provides
+    fun providesReporteTokenPBIDao( evenimentDatabase: EvenimentDatabase ): ReporteTokenPBIDatabaseDao {
+        return evenimentDatabase.reporteTokenPBIDao()
     }
 
 }

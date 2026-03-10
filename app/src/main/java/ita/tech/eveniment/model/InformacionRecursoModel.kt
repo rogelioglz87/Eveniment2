@@ -23,7 +23,10 @@ data class InformacionRecursoModel(
     val fecha_ini: String,
     val fecha_fin: String,
     val recursos_nas: String,
-    val id_reporte_powerbi: String
+    val id_reporte_powerbi: String,
+    val pbi_user_token: String, // Metodo: USER OWNS DATA
+    val id_usuario: Int,        // Metodo: USER OWNS DATA
+    val token_powerbi: String   // Metodo: APP OWNS DATA
 ){
     // Opción A: Intentar obtenerlo como String simple
     fun obtenerDatosComoString(): String {

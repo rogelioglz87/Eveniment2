@@ -50,6 +50,8 @@ fun Plantilla_Horizontal_Diez(
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
 
+    val tokensPBI by procesoVM.tokensMap.collectAsState()
+
     // Obtenemos los datos del clima
     val clima by procesoVM.clima.collectAsState()
 
@@ -146,7 +148,9 @@ fun Plantilla_Horizontal_Diez(
                             colorSecundario = procesoVM.stateEveniment.color_secundario,
                             textoAgrupado = procesoVM.stateInformacionPantalla.eventos_texto_agrupado,
                             plantilla = 10,
-                            zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                            zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                            tokensPBI = tokensPBI,
+                            pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                         )
                     }
                 } else {

@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ita.tech.eveniment.model.InformacionRecursoModel
+import ita.tech.eveniment.repository.UsuarioTokenPBIRepository
 import ita.tech.eveniment.state.CarrucelState
 import ita.tech.eveniment.util.setTimeZone
 import ita.tech.eveniment.util.stringDateToZoneDateTime
@@ -16,8 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import javax.inject.Inject
 
-class CarrucelViewModel: ViewModel() {
+class CarrucelViewModel : ViewModel() {
 
     private var stateCarrucel by mutableStateOf(CarrucelState())
         private set
@@ -31,7 +34,6 @@ class CarrucelViewModel: ViewModel() {
     // Guarda la lista original sin filtrar
     private val _listaOriginal = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())
 
-
     // Mostrara la Lista ya filtrada en funcion al Calendario de la lista de reproducción
     private val _listaFiltrada = MutableStateFlow<List<InformacionRecursoModel>>(emptyList())
     val listaFiltrada = _listaFiltrada.asStateFlow()
@@ -40,7 +42,7 @@ class CarrucelViewModel: ViewModel() {
 
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-    private var timeZone = "America/Mexico_City";
+    private var timeZone = "America/Mexico_City"
 
     fun detener(){
         cronJob?.cancel()
@@ -121,5 +123,7 @@ class CarrucelViewModel: ViewModel() {
 
         _listaFiltrada.value = nuevaLista
     }
+
+
 
 }

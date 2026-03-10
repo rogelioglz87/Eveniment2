@@ -18,7 +18,6 @@ class CalendarioReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
 
         val tipoAlarma = intent?.getStringExtra("TIPO_ALARMA") ?: ""
-
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {

@@ -23,10 +23,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 fun RecursoPBI(
     embedUrl: String,
     embedToken: String,
-    reportId: String
+    reportId: String,
+    paginaPowerBI: String,
+    pbi_configuracion: String
 ){
-    // var webViewInstance: WebView? = null
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+
+    // SE DEBE OBTENER COMO PARAMENTRO DE CONFIGURACION
+    val tokenType = if (pbi_configuracion == "user") 0 else 1 // 0: USER, 1: APP
 
     AndroidView(
         modifier = Modifier
@@ -58,7 +62,7 @@ fun RecursoPBI(
 
                         // Cuando el HTML carga, inyectamos los datos
                         view?.evaluateJavascript(
-                            "loadReport('$embedUrl', '$embedToken', '$reportId')",
+                            "loadReport('$embedUrl', '$embedToken', '$reportId', '$tokenType', '$paginaPowerBI')",
                             null
                         )
                     }
@@ -71,7 +75,7 @@ fun RecursoPBI(
         update = { webView ->
             if( webView.url != "file:///android_asset/pbi_bridge.html" ){
                 webView.evaluateJavascript(
-                    "loadReport('$embedUrl', '$embedToken', '$reportId')",
+                    "loadReport('$embedUrl', '$embedToken', '$reportId', '$tokenType', '$paginaPowerBI')",
                     null
                 )
             }
@@ -80,7 +84,6 @@ fun RecursoPBI(
 
     DisposableEffect(Unit) {
         onDispose {
-            println("***Limpiar pagina web")
             webViewInstance?.apply {
                 evaluateJavascript("resetReport()", null)
                 stopLoading()
