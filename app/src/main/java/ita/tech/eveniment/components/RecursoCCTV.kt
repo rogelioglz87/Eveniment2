@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -40,9 +43,9 @@ fun RecursoCCTV(path: String, isOverlay: Boolean = false){
     val paths = path.split("|")
     val composableScope = rememberCoroutineScope()
 
-    val players = remember {
-        mutableListOf<ExoPlayer>()
-    }
+    val players = remember { mutableListOf<ExoPlayer>() }
+    // val players by remember { mutableStateOf<ExoPlayer?>(null) }
+
     paths.forEach { path ->
         if(path != "")
         {

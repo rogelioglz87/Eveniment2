@@ -1,6 +1,5 @@
 package ita.tech.eveniment.views.plantillasHorizontales
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,12 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ita.tech.eveniment.components.Carrucel
 import ita.tech.eveniment.components.PHBarraLateralUno
-import ita.tech.eveniment.components.RecursoImagen
 import ita.tech.eveniment.components.RecursoListaVideos
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.viewModels.CarrucelViewModel
 import ita.tech.eveniment.viewModels.ProcesoViewModel
-import ita.tech.eveniment.viewModels.RecursoVideoModel
 import kotlinx.coroutines.delay
 
 
@@ -47,6 +44,8 @@ fun Plantilla_Horizontal_Cuatro(
     val recursos_nas = procesoVM.stateInformacionPantalla.recursos_nas
     var contador by remember { mutableIntStateOf(0) }
     var showNAS by remember { mutableStateOf(false) }
+
+    val tokensPBI by procesoVM.tokensMap.collectAsState()
 
     // Medidas
     val plantilla = 4
@@ -104,7 +103,9 @@ fun Plantilla_Horizontal_Cuatro(
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = textoAgrupado,
                         plantilla = plantilla,
-                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                        tokensPBI = tokensPBI,
+                        pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                     )
                 }
             }else{

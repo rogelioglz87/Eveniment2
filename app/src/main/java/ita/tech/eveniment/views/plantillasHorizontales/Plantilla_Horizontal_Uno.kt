@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,8 @@ fun Plantilla_Horizontal_Uno(
     val barra = MEDIDAS?.plantillas?.get(plantilla)?.barra ?: 0.18f
     val padding = (MEDIDAS?.plantillas?.get(plantilla)?.padding.toString().toIntOrNull() ?: 10).dp
     val contenido = MEDIDAS?.plantillas?.get(plantilla)?.contenido ?: 0.82f
+
+    val tokensPBI by procesoVM.tokensMap.collectAsState()
 
     //-- Detectamos si el estatus del Internet
     LaunchedEffect(estatusInternetNAS) {
@@ -112,7 +115,9 @@ fun Plantilla_Horizontal_Uno(
                         colorSecundario = procesoVM.stateEveniment.color_secundario,
                         textoAgrupado = textoAgrupado,
                         plantilla = plantilla,
-                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube
+                        zoom_youtube = procesoVM.stateInformacionPantalla.zoom_youtube,
+                        tokensPBI = tokensPBI,
+                        pbi_configuracion = procesoVM.stateInformacionPantalla.pbi_configuracion
                     )
                 }
             }else{

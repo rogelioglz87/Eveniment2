@@ -23,13 +23,14 @@
 <body>
 <div id="reportContainer"></div>
 <script>
-    function loadReport(embedUrl, embedToken, reportId) {
+    function loadReport(embedUrl, embedToken, reportId, tokenType, paginaPowerBI) {
         var config = {
             type: 'report',
-            tokenType: 0,
+            tokenType: parseInt( tokenType ),
             accessToken: embedToken,
             embedUrl: embedUrl,
             id: reportId,
+            pageName: paginaPowerBI,
             settings: {
                 filterPaneEnabled: false,
                 navContentPaneEnabled: false,
@@ -67,7 +68,7 @@
         const config = {
             type: 'report',
             settings: {
-                layoutType: models.LayoutType.Master
+                // layoutType: models.LayoutType.Master
             }
         };
 

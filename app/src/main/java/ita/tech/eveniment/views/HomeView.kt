@@ -45,6 +45,7 @@ import ita.tech.eveniment.views.plantillasHorizontales.Plantilla_Horizontal_Quin
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Ocho
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Siete
 import ita.tech.eveniment.views.plantillasVerticales.Plantilla_Vertical_Totem_1
+import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -131,22 +132,44 @@ fun HomeView(
 
         // Escuchamos los eventos del usuario
         mSocket.on("metodos_servidor") { args ->
-            println("****COMANDO: ${args[0]}")
             if (args != null) {
                 val comando = args[0]
-                //-- Actualiza la lista de reproducción
-                if (comando == "actualizar_recursos")
-                {
-                    procesoVM.descargarInformacionListaReproduccion()
+
+                when (comando){
+                    is String -> {
+                        //-- Actualiza la lista de reproducción
+                        when (comando) {
+                            "actualizar_recursos" -> {
+                                procesoVM.descargarInformacionListaReproduccion()
+                            }
+                            //-- Actualizar los datos del dispositivo
+                            "actualizar_datos_dispositivo" -> {
+                                procesoVM.descargarInformacionPantalla()
+                            }
+                            "reiniciar_box" -> {
+                                procesoVM.reiniciarDispositivo()
+                            }
+                        }
+                    }
+                    is JSONObject -> {
+                        try {
+                            val comando_tipo = comando.optString("comando")
+                            val token = comando.optString("token")
+                            val clave = comando.optString("clave")
+
+                            when (comando_tipo){
+                                "actualizar_token_pbi" -> {
+                                    procesoVM.actualizarTokenPBI(clave, token)
+                                }
+                            }
+                        }
+                        catch (e: Exception){
+                            Log.e("ERROR", e.message.toString())
+                        }
+                    }
                 }
-                //-- Actualizar los datos del dispositivo
-                else if(comando == "actualizar_datos_dispositivo")
-                {
-                    procesoVM.descargarInformacionPantalla()
-                }
-                else if( comando == "reiniciar_box" ){
-                    procesoVM.reiniciarDispositivo()
-                }
+
+
             }
         }
 
