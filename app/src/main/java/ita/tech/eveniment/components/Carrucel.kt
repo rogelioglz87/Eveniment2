@@ -1,7 +1,6 @@
 package ita.tech.eveniment.components
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.util.UnstableApi
 import ita.tech.eveniment.model.InformacionRecursoModel
-import ita.tech.eveniment.util.parseStringToObject
 import ita.tech.eveniment.viewModels.CarrucelViewModel
 import kotlinx.coroutines.launch
 
@@ -130,13 +128,23 @@ fun Carrucel(
                     RecursoImagen(rutaImagen = recurso, context = context)
                 } else if (recursos[page].tipo_slide == "video") {
                     RecursoVideo(
-                        recurso,
+                        path = recurso,
                         isCurrentlyVisible = (pagerState.currentPage == page),
-                        recursos.size,
-                        isOverlay = isOverlay
+                        totalRecursos = recursos.size,
+                        isOverlay = isOverlay,
+                        uniqueKey = page
                     )
                 } else if (recursos[page].tipo_slide == "cctv") {
-                    RecursoCCTV(path = recurso, isOverlay = isOverlay)
+                    when(recursos[page].vlc_activo){
+                        //-- VLC
+                        "1" -> RecursoVLCMaster(path = recurso, isOverlay = isOverlay)
+                        //-- Exoplayer
+                        else -> RecursoCCTVMaster(
+                            path = recurso,
+                            isCurrentlyVisible = (pagerState.currentPage == page),
+                            isOverlay = isOverlay
+                        )
+                    }
                 } else if (recursos[page].tipo_slide == "pagina_web") {
                     RecursoWeb(url = recurso)
                 } else if (recursos[page].tipo_slide == "youtube" && (recursos[page].tipo_video_youtube == "video" || recursos[page].tipo_video_youtube == "en_directo")) {
@@ -145,10 +153,10 @@ fun Carrucel(
                     RecursoYouTubeLista(recurso, zoom_youtube)
                 } else if (recursos[page].tipo_slide == "nas") {
                     RecursoListaVideos(
-                        recurso,
-                        recursos[page].recursos_nas,
+                        path =recurso,
+                        rutasDeVideos = recursos[page].recursos_nas,
                         isCurrentlyVisible = (pagerState.currentPage == page),
-                        recursos.size,
+                        totalRecursos = recursos.size,
                         isOverlay = isOverlay
                     )
                 } else if(recursos[page].tipo_slide == "texto"){

@@ -28,14 +28,20 @@ import ita.tech.eveniment.viewModels.RecursoVideoModel
 
 @OptIn(UnstableApi::class)
 @Composable
-fun RecursoVideo(path: String, isCurrentlyVisible: Boolean, totalRecursos: Int = 0, isOverlay: Boolean = false) {
+fun RecursoVideo(
+    path: String,
+    isCurrentlyVisible: Boolean,
+    totalRecursos: Int = 0,
+    isOverlay: Boolean = false,
+    uniqueKey: Any
+) {
 
     val context = LocalContext.current
 
     // val exoPlayer = remember { ExoPlayer.Builder(context).build() }
-    var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
+    var exoPlayer by remember(uniqueKey) { mutableStateOf<ExoPlayer?>(null) }
 
-    LaunchedEffect(isCurrentlyVisible) {
+    LaunchedEffect(isCurrentlyVisible, uniqueKey) {
         if(isCurrentlyVisible)
         {
             val newPlayer = ExoPlayer.Builder(context).build().apply {
@@ -90,7 +96,7 @@ fun RecursoVideo(path: String, isCurrentlyVisible: Boolean, totalRecursos: Int =
         }
     )
 
-    DisposableEffect(Unit) {
+    DisposableEffect(uniqueKey) {
         onDispose {
             println("***----Salir del reproductor")
             exoPlayer?.playWhenReady = false
