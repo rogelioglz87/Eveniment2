@@ -134,5 +134,6 @@ dependencies {
     //-- API CHECK INTERNET
     implementation("com.github.pwittchen:reactivenetwork-rx2:3.0.8")
 
-
+    //-- VLC
+    implementation("org.videolan.android:libvlc-all:3.6.0-eap11")
 }
