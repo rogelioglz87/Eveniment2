@@ -42,12 +42,7 @@ import kotlinx.coroutines.launch
 fun DownloadScreen(procesoVM: ProcesoViewModel){
     val stateEveniment = procesoVM.stateEveniment
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes( R.raw.loading ))
-
     val context = LocalContext.current
-
-    //-- Contabiliza los recursos descargados
-    var recursosDescargados: Int = 1;
-
     val scope = rememberCoroutineScope()
 
     /**
@@ -58,24 +53,13 @@ fun DownloadScreen(procesoVM: ProcesoViewModel){
             procesoVM.iniciarDescargaInformacion()
         }
         val receiver = DescargarReceiver(
-            // procesoVM.recursosId,
+            getIdsDescarga = { procesoVM.recursosId.value },
             procesoVM.stateEveniment.totalRecursos,
             onComplete = {
-                procesoVM.sustituyeUrlPorPathLocal()
-                procesoVM.sustituyeUrlPorPathLocalPlantilla()
-                procesoVM.sustituyeUrlPorPathLocalPantalla()
-                procesoVM.setEstatusDescarga(false)      // Bandera para indicar que se quite la pantalla de descarga
-                procesoVM.setBandInicioDescarga(false)
-                procesoVM.setTotalRecursos(0)            // Inicializamos el Total de recursos a descargar
-                procesoVM.setTotalRecursosDescargados(0) // Inicializamos el Contador de recursos descargados
-                procesoVM.clearListaIdRecursos()         // Borramos los Ids de las descargas
-                scope.launch(Dispatchers.IO) {
-                    procesoVM.borrarRecursos()
-                }
+                procesoVM.onDescargaCompletaCompose()
             },
-            onRecursoDescargado = {
-                procesoVM.setTotalRecursosDescargados(recursosDescargados)
-                recursosDescargados++
+            onRecursoDescargado = { descargados ->
+                procesoVM.setTotalRecursosDescargados(descargados)
             }
         )
         if(stateEveniment.bandInicioDescarga){

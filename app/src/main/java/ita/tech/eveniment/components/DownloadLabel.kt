@@ -20,35 +20,17 @@ fun DownloadLabel(procesoVM: ProcesoViewModel){
     val stateEveniment = procesoVM.stateEveniment
     val context = LocalContext.current
 
-    //-- Contabiliza los recursos descargados
-    var recursosDescargados: Int = 1;
-
-    val scope = rememberCoroutineScope()
-
     DisposableEffect(stateEveniment.bandInicioDescarga) {
 
         val receiver = DescargarReceiver(
-            // procesoVM.recursosId,
-            procesoVM.stateEveniment.totalRecursos,
+            getIdsDescarga = { procesoVM.recursosId.value },
+            totalRecursos = procesoVM.stateEveniment.totalRecursos,
             onComplete = {
                 println("---- Descarga COMPLETA")
-                procesoVM.sustituyeUrlPorPathLocal()
-                procesoVM.sustituyeUrlPorPathLocalPlantilla()
-                procesoVM.sustituyeUrlPorPathLocalPantalla()
-                procesoVM.resetCarrucel()
-                procesoVM.setBandInicioDescarga(false)
-                procesoVM.setTotalRecursos(0)    // Inicializamos el total de recursos a descargar
-                procesoVM.setTotalRecursosDescargados(0)
-                procesoVM.clearListaIdRecursos() // Borramos los Ids de las descargas
-                procesoVM.setbandDescargaLbl(false)
-                scope.launch(Dispatchers.IO) {
-                    procesoVM.borrarRecursos()
-                }
-
+                procesoVM.onDescargaCompletaLabel()
             },
-            onRecursoDescargado = {
-                procesoVM.setTotalRecursosDescargados(recursosDescargados)
-                recursosDescargados++
+            onRecursoDescargado = { descargados ->
+                procesoVM.setTotalRecursosDescargados(descargados)
             }
         )
         if(stateEveniment.bandInicioDescarga){
