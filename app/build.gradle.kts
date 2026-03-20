@@ -28,6 +28,13 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        /*
+        ndk {
+            // Solo las arquitecturas que necesitamos
+            //noinspection ChromeOsAbiSupport
+            abiFilters += listOf("armeabi-v7a") // X96 MAX+
+        }
+        */
     }
 
     buildTypes {
@@ -134,6 +141,6 @@ dependencies {
     //-- API CHECK INTERNET
     implementation("com.github.pwittchen:reactivenetwork-rx2:3.0.8")
 
-    //-- VLC
+    //-- VLC (Se utiliza para la transmision por la NVR y RTSP del Encoder)
     implementation("org.videolan.android:libvlc-all:3.6.0-eap11")
 }

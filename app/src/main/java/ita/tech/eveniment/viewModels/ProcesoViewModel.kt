@@ -72,6 +72,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -149,8 +150,8 @@ class ProcesoViewModel @Inject constructor(
     /**
      * Almacena los IDs de los recursos a descargar
      */
-    private var _recursosId = mutableListOf<Long>()
-    var recursosId = _recursosId
+    private var _recursosId = MutableStateFlow<Set<Long>>(emptySet())
+    var recursosId: StateFlow<Set<Long>> = _recursosId.asStateFlow()
 
     //-- Variables de tiempo
     private var cronJobTimer: Job? = null
@@ -195,6 +196,14 @@ class ProcesoViewModel @Inject constructor(
 
         // Proceso que escucha la notificacion de la Alarma del Texto
         notificarTexto()
+    }
+
+    fun agregarRecursoId(id: Long) {
+        _recursosId.update { currentSet -> currentSet + id }
+    }
+
+    fun clearListaIdRecursos() {
+        _recursosId.value = emptySet()
     }
 
     fun setNotificacionVPN( status: Boolean ){
@@ -783,7 +792,7 @@ class ProcesoViewModel @Inject constructor(
 
                 calendarioActivo = listaEnTurno
                 // _recursos_tmp.value = listaEnTurno.eventos.values.toList() ?: emptyList()
-                _recursos_tmp.value = listaEnTurno?.extraerEventos() ?: emptyList()
+                _recursos_tmp.value = listaEnTurno.extraerEventos()
 
                 // Analizamos si la lista contiene recursos de Textos
                 revisaRecursosTexto()
@@ -914,9 +923,11 @@ class ProcesoViewModel @Inject constructor(
     /**
      * Limpia los IDs de las descargas
      */
+    /*
     fun clearListaIdRecursos(){
         _recursosId.clear()
     }
+    */
 
     private suspend fun obtenerInformacionCalendario(){
         var result: List<InformacionCalendarioModel>? = null
@@ -1071,12 +1082,12 @@ class ProcesoViewModel @Inject constructor(
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach{ recurso ->
                 val carpeta: String = if (recurso.tipo_slide=="imagen") "Imagenes" else "Videos"
-                // val recursoDatos: String = recurso.datos.toString()
                 val recursoDatos: String = recurso.obtenerDatosComoString()
                 val recursoNombre: String = obtenerNombreUrl( recursoDatos )
 
                 // Descarga de recursos
-                _recursosId.add( descargar( recursoNombre, recursoDatos, carpeta ) )
+                val id = descargar(recursoNombre, recursoDatos, carpeta)
+                agregarRecursoId( id )
             }
         }
         // else{
@@ -1089,7 +1100,8 @@ class ProcesoViewModel @Inject constructor(
         if(listaRecursos.isNotEmpty()){
             listaRecursos.forEach { recurso ->
                 val recursoNombre: String = obtenerNombreUrl( recurso )
-                _recursosId.add( descargar( recursoNombre, recurso, "Datos" ) )
+                val id = descargar(recursoNombre, recurso, "Datos")
+                agregarRecursoId( id )
             }
         }
         // else{
@@ -1660,6 +1672,45 @@ class ProcesoViewModel @Inject constructor(
                     )
                 }
 
+            }
+        }
+    }
+
+    /**
+     * Finaliza proceso de descarga para la Etiqueta Label
+     */
+    fun onDescargaCompletaLabel(){
+        viewModelScope.launch {
+            sustituyeUrlPorPathLocal()
+            sustituyeUrlPorPathLocalPlantilla()
+            sustituyeUrlPorPathLocalPantalla()
+            resetCarrucel()
+            setBandInicioDescarga(false)
+            setTotalRecursos(0)    // Inicializamos el total de recursos a descargar
+            setTotalRecursosDescargados(0)
+            clearListaIdRecursos() // Borramos los Ids de las descargas
+            setbandDescargaLbl(false)
+            withContext(Dispatchers.IO){
+                borrarRecursos()
+            }
+        }
+    }
+
+    /**
+     * Finaliza proceso de descarga para la Pantalla 'DownloadScreen'
+     */
+    fun onDescargaCompletaCompose(){
+        sustituyeUrlPorPathLocal()
+        sustituyeUrlPorPathLocalPlantilla()
+        sustituyeUrlPorPathLocalPantalla()
+        setEstatusDescarga(false)      // Bandera para indicar que se quite la pantalla de descarga
+        setBandInicioDescarga(false)
+        setTotalRecursos(0)            // Inicializamos el Total de recursos a descargar
+        setTotalRecursosDescargados(0) // Inicializamos el Contador de recursos descargados
+        clearListaIdRecursos()         // Borramos los Ids de las descargas
+        viewModelScope.launch {
+            withContext(Dispatchers.IO){
+                borrarRecursos()
             }
         }
     }

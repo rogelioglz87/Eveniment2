@@ -1,5 +1,6 @@
 package ita.tech.eveniment.broadcast
 
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,49 +10,59 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 
 class DescargarReceiver(
-    // private val recursos: List<Long>,
+    private val getIdsDescarga: () -> Set<Long>,
     private val totalRecursos: Int,
     val onComplete: () -> Unit,
-    val onRecursoDescargado:() -> Unit
+    val onRecursoDescargado:(descargados: Int) -> Unit
 ): BroadcastReceiver() {
 
     private var registered: Boolean = false
-    // private val totalRecursos: Int = recursos.size
-    private var recursosDescargados: Int = 1
+    private var recursosDescargados: Int = 0
 
+    @SuppressLint("Range")
     override fun onReceive(context: Context?, intent: Intent?) {
-        if( intent?.action == "android.intent.action.DOWNLOAD_COMPLETE" ){
+        if (intent?.action == "android.intent.action.DOWNLOAD_COMPLETE") {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
 
-            // if( recursos.contains(id) ){
-            if( id != -1L ){
+            if (id == -1L) return
 
-                val downloadManager = context?.let { it.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager }
-                val query = DownloadManager.Query().setFilterById(id)
-                val cursor = downloadManager?.query(query)
+            // Consulta los IDs EN EL MOMENTO que llega el broadcast
+            val idsActuales = getIdsDescarga()
+            if (!idsActuales.contains(id)) return
 
-                // Validamos si la descarga fue exitosa
-                cursor?.use {
-                    if(it.moveToFirst()){
-                        val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                        val status = it.getInt(statusIndex)
+            val downloadManager =
+                context?.let { it.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager }
+            val cursor = downloadManager?.query(DownloadManager.Query().setFilterById(id))
 
-                        if(status == DownloadManager.STATUS_SUCCESSFUL) {
-                            println("---- Descarga exitosa: $id")
-                            onRecursoDescargado()
-                            println("---- Descarga recursosDescargados: $recursosDescargados")
-                            if( totalRecursos >= recursosDescargados ){
-                                onComplete()
+            // Validamos si la descarga fue exitosa
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val status = it.getInt(it.getColumnIndex(DownloadManager.COLUMN_STATUS))
 
-                                // Volvemos a inciarel contador para que ingrese a la funcion "onComplete" en una descarga posterior.
-                                recursosDescargados = 1
-                            }
+                    when (status) {
+                        DownloadManager.STATUS_SUCCESSFUL -> {
                             recursosDescargados++
+                            onRecursoDescargado(recursosDescargados)
+                            println("---- Descarga recursosDescargados: $recursosDescargados")
+                            if (recursosDescargados >= totalRecursos) {
+                                println("---- Descarga FINALIZAR")
+                                onComplete()
+                                // Volvemos a inciarel contador para que ingrese a la funcion "onComplete" en una descarga posterior.
+                                recursosDescargados = 0
+                            }
                         }
-                        else if(status == DownloadManager.STATUS_FAILED){
+
+                        DownloadManager.STATUS_FAILED -> {
                             println("---- Descarga fallida: $id")
                             //-- Borramos archivo con Falla
                             downloadManager.remove(id)
+
+                            //-- Contabilizamos las fallidas para no dejar la pantalla congelada
+                            recursosDescargados++
+                            if (recursosDescargados >= totalRecursos) {
+                                onComplete()
+                                recursosDescargados = 0
+                            }
                         }
                     }
                 }
