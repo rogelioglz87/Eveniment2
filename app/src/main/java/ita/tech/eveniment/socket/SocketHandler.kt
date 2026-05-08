@@ -14,7 +14,12 @@ object SocketHandler {
     @Synchronized
     fun setSocket() {
         try {
-            mSocket = IO.socket(SOCKET_URL, IO.Options.builder().setAuth(Collections.singletonMap("token", TOKEN_IO)).build())
+            val opciones = IO.Options.builder()
+                .setAuth(Collections.singletonMap("token", TOKEN_IO))
+                // Esta opcion indica que el tipo de conexion sea por websocket
+                // .setTransports(arrayOf(io.socket.engineio.client.transports.WebSocket.NAME))
+                .build()
+            mSocket = IO.socket(SOCKET_URL, opciones)
         } catch (e: URISyntaxException) {
             println("Error Socket: ${e.message}")
         }
