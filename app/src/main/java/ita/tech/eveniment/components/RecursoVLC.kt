@@ -1,9 +1,9 @@
 package ita.tech.eveniment.components
 
 import android.net.Uri
+import android.os.Build
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -31,16 +31,28 @@ fun RecursoVLC(
     val context = LocalContext.current
     val composableScope = rememberCoroutineScope()
     var retryJob by remember { mutableStateOf<Job?>(null) }
-    val vlcObjects = remember(path) {
-        val libVLC = LibVLC(context, arrayListOf(
+
+
+    val vlcObjects = remember() {
+        val opciones = arrayListOf(
             "--rtsp-tcp",
-            "--file-caching=300",
-            "--network-caching=300",
+            "--file-caching=1000",
+            "--network-caching=1000",
             "--clock-jitter=0",
             "--clock-synchro=0",
-            "--no-stats",         // Desactivar estadísticas ahorra ciclos de CPU
-            "--no-video-title-show" // Evita overlays innecesarios
-        ))
+            "--no-stats",            // Desactivar estadísticas ahorra ciclos de CPU
+            "--no-video-title-show", // Evita overlays
+            "--avcodec-hw=none",
+            "--no-osd",
+            "--ipv4",                // Forzar IPv4 para evitar el error de "invalid IP 0.0.0.0"
+        )
+
+        // Verificamos si es Android 12 (API 31), 12L (API 32) o 13 (API 33)
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S ) { // && Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU
+            opciones.add("--vout=android-display") // SE UTILIZA PARA ANDROID 12 (X98H)
+        }
+
+        val libVLC = LibVLC(context, opciones)
         val mediaPlayer = MediaPlayer(libVLC)
 
         // Retornamos un holder para limpiar ambos después
@@ -84,12 +96,18 @@ fun RecursoVLC(
         vlcObjects.player.setEventListener(listener)
 
         onDispose {
-            retryJob?.cancel()
-            vlcObjects.player.stop()
-            vlcObjects.player.setEventListener(null) // Limpiar listeners para evitar fugas
-            vlcObjects.player.detachViews()
-            vlcObjects.player.release()
-            vlcObjects.lib.release()
+            try {
+                retryJob?.cancel()
+                if( vlcObjects.player.isPlaying ){
+                    vlcObjects.player.stop()
+                }
+                vlcObjects.player.setEventListener(null) // Limpiar listeners para evitar fugas
+                vlcObjects.player.detachViews()
+                vlcObjects.player.release()
+                vlcObjects.lib.release()
+            } catch (e: Exception){
+                e.printStackTrace()
+            }
         }
     }
 
@@ -99,18 +117,21 @@ fun RecursoVLC(
             VLCVideoLayout(ctx).also { layout ->
                 vlcObjects.player.attachViews(layout, null, false, false)
 
-                val media = Media(vlcObjects.lib, Uri.parse(path))
-
-                // Optimizaciones para evitar el lag y el error de buffers del NVR
-                media.addOption(":network-caching=300")
-                media.addOption(":clock-jitter=0")
-                media.addOption(":clock-synchro=0")
-                media.addOption(":codec=all") // Permite que VLC use cualquier decodificador disponible
-                media.addOption(":rtsp-close-tcp")
-
+                val media = Media(vlcObjects.lib, Uri.parse(path)).apply {
+                    addOption(":network-caching=1500")
+                    addOption(":clock-jitter=0")
+                    addOption(":clock-synchro=0")
+                    addOption(":codec=all") // Permite que VLC use cualquier decodificador disponible
+                    addOption(":rtsp-close-tcp")
+                    addOption(":no-video-title-show")
+                    addOption(":rtsp-tcp") // Forzar TCP para estabilidad
+                    addOption(":no-drop-late-frames")
+                    addOption(":no-skip-frames")
+                }
                 vlcObjects.player.media = media
                 media.release() // Media se libera inmediatamente después de asignarse al player
                 vlcObjects.player.play()
+
             }
         },
         update = {  layout ->
