@@ -78,7 +78,7 @@ class EvenimentServices: Service() {
                                 e.message?.let { Log.d("ROOT_COMMAND", it) }
                             }
                         }
-                        // Por default dejamos la conffiguracion de Android 11, hasta que se realicen pruebas en las demas versiones.
+                        // Por default dejamos la configuracion de Android 11, hasta que se realicen pruebas en las demas versiones.
                         else -> {
                             // Comando que inicia de nuevo la App.
                             val command = "am start -n ${packageName}/.MainActivity"
