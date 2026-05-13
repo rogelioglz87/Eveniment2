@@ -33,7 +33,7 @@ class EvenimentServices: Service() {
                     when (Build.VERSION.SDK_INT) {
 
                         //-- ANDROID 9 y 13
-                        Build.VERSION_CODES.P, Build.VERSION_CODES.TIRAMISU -> {
+                        Build.VERSION_CODES.P, Build.VERSION_CODES.TIRAMISU, Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
                             val launchIntent = Intent(applicationContext, MainActivity::class.java).apply {
                                 // Flags importantes para traer la app al frente o crearla si no existe
                                 addFlags(
