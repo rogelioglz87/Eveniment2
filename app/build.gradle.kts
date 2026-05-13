@@ -15,12 +15,12 @@ plugins {
 
 android {
     namespace = "ita.tech.eveniment"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "ita.tech.eveniment"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -28,11 +28,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        /*
         ndk {
             // Solo las arquitecturas que necesitamos
             //noinspection ChromeOsAbiSupport
             abiFilters += listOf("armeabi-v7a") // X96 MAX+
-        }
+        }*/
     }
 
     buildTypes {
@@ -119,12 +120,12 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
 
     //-- EXOPLAYER
-    implementation("androidx.media3:media3-exoplayer:1.7.1")
-    implementation("androidx.media3:media3-exoplayer-dash:1.7.1")
-    implementation("androidx.media3:media3-ui:1.7.1")
-    implementation("androidx.media3:media3-common:1.7.1")
-    implementation("androidx.media3:media3-exoplayer-rtsp:1.7.1")
-    implementation("androidx.media3:media3-exoplayer-hls:1.7.1")
+    implementation("androidx.media3:media3-exoplayer:1.10.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.10.1")
+    implementation("androidx.media3:media3-ui:1.10.1")
+    implementation("androidx.media3:media3-common:1.10.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.10.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.10.1")
 
     //-- SOCKET
     implementation("io.socket:socket.io-client:2.0.0")
