@@ -33,7 +33,7 @@ import kotlin.random.nextInt
 
 private val random = Random
 private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
-private val formatoFechaEspaniol = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES"))
+private val formatoFechaEspaniol = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale.forLanguageTag("ES"))
 private val formatoFechaIngles = DateTimeFormatter.ofPattern("EEEE, dd MMMM", Locale.ENGLISH)
 // Formato de fechas recibida
 private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -189,7 +189,7 @@ fun iconClima(
 fun obtenerDiaAbreviado(fechaStr: String): String {
     return try {
         val fecha = LocalDate.parse(fechaStr)
-        val formatter = DateTimeFormatter.ofPattern("EEEE", Locale("es", "ES"))
+        val formatter = DateTimeFormatter.ofPattern("EEEE", Locale.forLanguageTag("ES"))
         fecha.format(formatter)
             .lowercase() // Asegura que esté en minúsculas (ej. "miércoles")
             .take(3)     // Toma solo "mié"
